@@ -1,0 +1,13 @@
+{
+  "sections": {
+    "box_apero_stats": {
+      "type": "box-apero-stats",
+      "settings": {
+        "title": "Nos Box Apéro en chiffres",
+        "subtitle": "Charcuteries artisanales France & Espagne · Depuis le lancement en 2026",
+        "bg_color": "#f4f4f4"
+      }
+    }
+  },
+  "order": ["box_apero_stats"]
+}

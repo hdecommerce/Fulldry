@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Box Apéro SaucBack – Statistiques</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f4f4f4;color:#1a1a2e}
+
+  /* ── WRAPPER ── */
+  .sbs{max-width:1100px;margin:0 auto;padding:60px 20px}
+
+  /* ── HEADER ── */
+  .sbs-head{text-align:center;margin-bottom:52px}
+  .sbs-badge{display:inline-block;background:#fff3cd;color:#856404;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:16px}
+  .sbs-title{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;line-height:1.15;margin-bottom:12px}
+  .sbs-title span{color:#c8102e}
+  .sbs-sub{font-size:1rem;color:#666}
+
+  /* ── KPIs ── */
+  .sbs-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:16px;margin-bottom:48px}
+  .sbs-kpi{background:#fff;border-radius:16px;padding:24px 16px;text-align:center;box-shadow:0 2px 16px rgba(0,0,0,.07);transition:transform .2s}
+  .sbs-kpi:hover{transform:translateY(-4px)}
+  .sbs-kpi.hero{background:linear-gradient(135deg,#c8102e,#8b0000);color:#fff;grid-column:span 2}
+  @media(max-width:540px){.sbs-kpi.hero{grid-column:span 1}}
+  .sbs-kpi-ico{font-size:1.8rem;margin-bottom:8px}
+  .sbs-kpi-val{font-size:1.9rem;font-weight:800;color:#c8102e;line-height:1;margin-bottom:6px}
+  .sbs-kpi.hero .sbs-kpi-val{color:#fff;font-size:2.2rem}
+  .sbs-kpi-lbl{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#888;line-height:1.4}
+  .sbs-kpi.hero .sbs-kpi-lbl{color:rgba(255,255,255,.8)}
+
+  /* ── SECTIONS ── */
+  .sbs-sec{background:#fff;border-radius:20px;padding:32px 28px;margin-bottom:24px;box-shadow:0 2px 16px rgba(0,0,0,.06)}
+  .sbs-sec-title{font-size:1.15rem;font-weight:700;margin-bottom:4px}
+  .sbs-sec-note{font-size:.8rem;color:#999;margin-bottom:24px}
+
+  /* ── BAR CHART ── */
+  .sbs-chart-wrap{overflow-x:auto}
+  .sbs-chart{display:flex;align-items:flex-end;gap:10px;height:200px;min-width:380px;padding-bottom:4px}
+  .sbs-bw{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .sbs-blabel-top{font-size:.72rem;font-weight:700;color:#444;margin-bottom:4px}
+  .sbs-bar{width:100%;border-radius:8px 8px 0 0;overflow:hidden;min-height:4px}
+  .sbs-bar-in{width:100%;height:100%;background:linear-gradient(180deg,#e63950,#c8102e);animation:grow .8s ease-out both;transform-origin:bottom}
+  @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  .sbs-blabel{font-size:.72rem;font-weight:600;color:#666;margin-top:6px;text-align:center}
+  .sbs-chart-note{font-size:.72rem;color:#bbb;margin-top:10px}
+
+  /* ── PRODUITS ── */
+  .sbs-prods{display:flex;flex-direction:column;gap:10px}
+  .sbs-prod{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:12px;background:#f8f9fa;transition:background .2s}
+  .sbs-prod:hover{background:#f0f0f0}
+  .sbs-prod.gold{background:#fffbe6;border-left:4px solid #f5a623}
+  .sbs-prod.silver{background:#f5f5f5;border-left:4px solid #9e9e9e}
+  .sbs-prod.bronze{background:#fff3ee;border-left:4px solid #cd7f32}
+  .sbs-prod-rank{font-size:1.3rem;min-width:34px;text-align:center}
+  .sbs-prod-info{flex:1;min-width:0}
+  .sbs-prod-name{font-weight:700;font-size:.9rem}
+  .sbs-prod-sub{font-size:.74rem;color:#888;margin:2px 0 8px}
+  .sbs-prod-bar-bg{background:#e9ecef;border-radius:4px;height:6px}
+  .sbs-prod-bar{height:6px;background:linear-gradient(90deg,#c8102e,#e63950);border-radius:4px}
+  .sbs-prod-stats{text-align:right;min-width:88px}
+  .sbs-prod-ca{display:block;font-weight:800;font-size:1rem;color:#c8102e}
+  .sbs-prod-cmd{font-size:.74rem;color:#999}
+
+  /* ── INVENTAIRE ── */
+  .sbs-inv{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:12px}
+  .sbs-inv-item{padding:14px;border-radius:12px;border:1.5px solid #e9ecef;background:#fff}
+  .sbs-inv-item.hi{border-color:#28a745}
+  .sbs-inv-item.mid{border-color:#ffc107}
+  .sbs-inv-item.lo{border-color:#dc3545}
+  .sbs-inv-name{font-weight:700;font-size:.84rem;margin-bottom:3px}
+  .sbs-inv-price{font-size:.74rem;color:#999;margin-bottom:6px}
+  .sbs-inv-qty{font-size:1.35rem;font-weight:800;color:#333}
+  .sbs-inv-badge{display:inline-block;font-size:.66rem;font-weight:700;padding:2px 9px;border-radius:20px;margin-top:5px}
+  .sbs-inv-item.hi .sbs-inv-badge{background:#d4edda;color:#155724}
+  .sbs-inv-item.mid .sbs-inv-badge{background:#fff3cd;color:#856404}
+  .sbs-inv-item.lo .sbs-inv-badge{background:#f8d7da;color:#721c24}
+
+  /* ── FIDÉLISATION ── */
+  .sbs-loy{display:flex;flex-direction:column;gap:12px}
+  .sbs-loy-row{display:flex;align-items:center;gap:14px}
+  .sbs-loy-m{width:30px;font-weight:700;font-size:.84rem;color:#666}
+  .sbs-loy-bars{flex:1;display:flex;gap:4px;min-height:26px}
+  .sbs-loy-bar{display:flex;align-items:center;padding:0 8px;border-radius:6px;min-width:2%}
+  .sbs-loy-bar span{font-size:.68rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+  .sbs-loy-bar.new{background:#c8102e}
+  .sbs-loy-bar.ret{background:#e63950;opacity:.8}
+  .sbs-loy-total{font-size:.76rem;color:#aaa;min-width:68px;text-align:right}
+
+  /* ── PRIX ── */
+  .sbs-prices{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:18px}
+  .sbs-price{border:2px solid #e9ecef;border-radius:16px;padding:26px 20px;text-align:center;position:relative;transition:transform .2s}
+  .sbs-price:hover{transform:translateY(-4px)}
+  .sbs-price.pop{border-color:#c8102e;background:linear-gradient(135deg,#fff5f5,#fff);box-shadow:0 4px 24px rgba(200,16,46,.15)}
+  .sbs-price-badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#c8102e;color:#fff;font-size:.68rem;font-weight:700;padding:3px 12px;border-radius:20px;white-space:nowrap}
+  .sbs-price-lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:#aaa;margin-bottom:10px;font-weight:600}
+  .sbs-price-val{font-size:2.2rem;font-weight:800;color:#c8102e;margin-bottom:6px}
+  .sbs-price-name{font-weight:700;font-size:.9rem;margin-bottom:4px}
+  .sbs-price-desc{font-size:.76rem;color:#888}
+
+  /* ── FOOTER ── */
+  .sbs-foot{text-align:center;margin-top:36px;font-size:.74rem;color:#ccc}
+</style>
+</head>
+<body>
+
+<div class="sbs">
+
+  <!-- HEADER -->
+  <div class="sbs-head">
+    <div class="sbs-badge">📊 Statistiques boutique</div>
+    <h1 class="sbs-title">Nos <span>Box Apéro</span> en chiffres</h1>
+    <p class="sbs-sub">Charcuteries artisanales · France & Espagne · IGP Certifié · SaucBack.com</p>
+  </div>
+
+  <!-- KPIs -->
+  <div class="sbs-kpis">
+    <div class="sbs-kpi hero">
+      <div class="sbs-kpi-ico">💶</div>
+      <div class="sbs-kpi-val" data-count="2799" data-sfx="€">2 799 €</div>
+      <div class="sbs-kpi-lbl">Chiffre d'affaires<br>Box Apéro (total)</div>
+    </div>
+    <div class="sbs-kpi">
+      <div class="sbs-kpi-ico">📦</div>
+      <div class="sbs-kpi-val" data-count="119">119</div>
+      <div class="sbs-kpi-lbl">Commandes<br>passées</div>
+    </div>
+    <div class="sbs-kpi">
+      <div class="sbs-kpi-ico">🧺</div>
+      <div class="sbs-kpi-val" data-count="9">9</div>
+      <div class="sbs-kpi-lbl">Références<br>Box Apéro</div>
+    </div>
+    <div class="sbs-kpi">
+      <div class="sbs-kpi-ico">🔁</div>
+      <div class="sbs-kpi-val" data-count="20" data-sfx="%">20%</div>
+      <div class="sbs-kpi-lbl">Clients<br>fidèles (juin)</div>
+    </div>
+    <div class="sbs-kpi">
+      <div class="sbs-kpi-ico">🛒</div>
+      <div class="sbs-kpi-val" data-count="40" data-sfx="€">40 €</div>
+      <div class="sbs-kpi-lbl">Panier moyen<br>Box Apéro</div>
+    </div>
+    <div class="sbs-kpi">
+      <div class="sbs-kpi-ico">📈</div>
+      <div class="sbs-kpi-val" data-count="1522">1 522</div>
+      <div class="sbs-kpi-lbl">Box en stock<br>disponibles</div>
+    </div>
+  </div>
+
+  <!-- CROISSANCE -->
+  <div class="sbs-sec">
+    <div class="sbs-sec-title">📈 Croissance mensuelle des commandes</div>
+    <div class="sbs-sec-note">Depuis le lancement des Box Apéro – janvier 2026</div>
+    <div class="sbs-chart-wrap">
+      <div class="sbs-chart">
+        <!-- Jan: 7/277=2.5% -->
+        <div class="sbs-bw">
+          <div class="sbs-blabel-top">7</div>
+          <div class="sbs-bar" style="height:2.5%"><div class="sbs-bar-in"></div></div>
+          <div class="sbs-blabel">Jan</div>
+        </div>
+        <!-- Fév: 3/277=1.1% -->
+        <div class="sbs-bw">
+          <div class="sbs-blabel-top">3</div>
+          <div class="sbs-bar" style="height:1.1%"><div class="sbs-bar-in"></div></div>
+          <div class="sbs-blabel">Fév</div>
+        </div>
+        <!-- Mar: 21/277=7.6% -->
+        <div class="sbs-bw">
+          <div class="sbs-blabel-top">21</div>
+          <div class="sbs-bar" style="height:7.6%"><div class="sbs-bar-in"></div></div>
+          <div class="sbs-blabel">Mar</div>
+        </div>
+        <!-- Avr: 67/277=24.2% -->
+        <div class="sbs-bw">
+          <div class="sbs-blabel-top">67</div>
+          <div class="sbs-bar" style="height:24.2%"><div class="sbs-bar-in"></div></div>
+          <div class="sbs-blabel">Avr</div>
+        </div>
+        <!-- Mai: 277/277=100% -->
+        <div class="sbs-bw">
+          <div class="sbs-blabel-top">277</div>
+          <div class="sbs-bar" style="height:100%"><div class="sbs-bar-in"></div></div>
+          <div class="sbs-blabel">Mai</div>
+        </div>
+        <!-- Juin: 183/277=66.1% -->
+        <div class="sbs-bw">
+          <div class="sbs-blabel-top">183*</div>
+          <div class="sbs-bar" style="height:66.1%"><div class="sbs-bar-in" style="opacity:.7"></div></div>
+          <div class="sbs-blabel">Juin</div>
+        </div>
+      </div>
+      <p class="sbs-chart-note">* Juin 2026 : données partielles au 18/06</p>
+    </div>
+  </div>
+
+  <!-- TOP PRODUITS -->
+  <div class="sbs-sec">
+    <div class="sbs-sec-title">🏆 Classement des Box Apéro</div>
+    <div class="sbs-sec-note">Performance commerciale depuis le lancement</div>
+    <div class="sbs-prods">
+
+      <div class="sbs-prod gold">
+        <div class="sbs-prod-rank">🥇</div>
+        <div class="sbs-prod-info">
+          <div class="sbs-prod-name">Box Apéro Terroir</div>
+          <div class="sbs-prod-sub">5 Charcuteries · France & Espagne · 39,99 €</div>
+          <div class="sbs-prod-bar-bg"><div class="sbs-prod-bar" style="width:100%"></div></div>
+        </div>
+        <div class="sbs-prod-stats">
+          <span class="sbs-prod-ca">2 248 €</span>
+          <span class="sbs-prod-cmd">103 commandes</span>
+        </div>
+      </div>
+
+      <div class="sbs-prod silver">
+        <div class="sbs-prod-rank">🥈</div>
+        <div class="sbs-prod-info">
+          <div class="sbs-prod-name">Box Charcuterie Fine</div>
+          <div class="sbs-prod-sub">4 Spécialités · Saucisson, Lomo, Serrano IGP · 34,99 €</div>
+          <div class="sbs-prod-bar-bg"><div class="sbs-prod-bar" style="width:8.4%"></div></div>
+        </div>
+        <div class="sbs-prod-stats">
+          <span class="sbs-prod-ca">188 €</span>
+          <span class="sbs-prod-cmd">6 commandes</span>
+        </div>
+      </div>
+
+      <div class="sbs-prod bronze">
+        <div class="sbs-prod-rank">🥉</div>
+        <div class="sbs-prod-info">
+          <div class="sbs-prod-name">Box Apéro Classique</div>
+          <div class="sbs-prod-sub">4 Charcuteries · France & Espagne · 39,99 €</div>
+          <div class="sbs-prod-bar-bg"><div class="sbs-prod-bar" style="width:4.9%"></div></div>
+        </div>
+        <div class="sbs-prod-stats">
+          <span class="sbs-prod-ca">109 €</span>
+          <span class="sbs-prod-cmd">3 commandes</span>
+        </div>
+      </div>
+
+      <div class="sbs-prod">
+        <div class="sbs-prod-rank">4</div>
+        <div class="sbs-prod-info">
+          <div class="sbs-prod-name">Box Ibérique</div>
+          <div class="sbs-prod-sub">Chorizo IGP, Lomo, ¼ Serrano · 49,99 €</div>
+          <div class="sbs-prod-bar-bg"><div class="sbs-prod-bar" style="width:3.8%"></div></div>
+        </div>
+        <div class="sbs-prod-stats">
+          <span class="sbs-prod-ca">85 €</span>
+          <span class="sbs-prod-cmd">2 commandes</span>
+        </div>
+      </div>
+
+      <div class="sbs-prod">
+        <div class="sbs-prod-rank">5</div>
+        <div class="sbs-prod-info">
+          <div class="sbs-prod-name">Box Apéro Caractère</div>
+          <div class="sbs-prod-sub">Saucisson, Serrano IGP, Chorizo Fort · 39,99 €</div>
+          <div class="sbs-prod-bar-bg"><div class="sbs-prod-bar" style="width:3.3%"></div></div>
+        </div>
+        <div class="sbs-prod-stats">
+          <span class="sbs-prod-ca">74 €</span>
+          <span class="sbs-prod-cmd">2 commandes</span>
+        </div>
+      </div>
+
+      <div class="sbs-prod">
+        <div class="sbs-prod-rank">6</div>
+        <div class="sbs-prod-info">
+          <div class="sbs-prod-name">Box XXL Conviviale</div>
+          <div class="sbs-prod-sub">5 Charcuteries + ¼ Jambon Serrano · 59,99 €</div>
+          <div class="sbs-prod-bar-bg"><div class="sbs-prod-bar" style="width:2.4%"></div></div>
+        </div>
+        <div class="sbs-prod-stats">
+          <span class="sbs-prod-ca">54 €</span>
+          <span class="sbs-prod-cmd">1 commande</span>
+        </div>
+      </div>
+
+      <div class="sbs-prod">
+        <div class="sbs-prod-rank">7</div>
+        <div class="sbs-prod-info">
+          <div class="sbs-prod-name">Mini Box Apéro</div>
+          <div class="sbs-prod-sub">3 Charcuteries · Format Découverte · 24,99 €</div>
+          <div class="sbs-prod-bar-bg"><div class="sbs-prod-bar" style="width:1.8%"></div></div>
+        </div>
+        <div class="sbs-prod-stats">
+          <span class="sbs-prod-ca">41 €</span>
+          <span class="sbs-prod-cmd">2 commandes</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- INVENTAIRE -->
+  <div class="sbs-sec">
+    <div class="sbs-sec-title">🧺 Stock disponible par box</div>
+    <div class="sbs-sec-note">Inventaire en temps réel – 18 juin 2026</div>
+    <div class="sbs-inv">
+      <div class="sbs-inv-item hi">
+        <div class="sbs-inv-name">Mini Box Apéro</div>
+        <div class="sbs-inv-price">24,99 €</div>
+        <div class="sbs-inv-qty">228 unités</div>
+        <span class="sbs-inv-badge">Disponible</span>
+      </div>
+      <div class="sbs-inv-item hi">
+        <div class="sbs-inv-name">Box Apéro Classique</div>
+        <div class="sbs-inv-price">39,99 €</div>
+        <div class="sbs-inv-qty">226 unités</div>
+        <span class="sbs-inv-badge">Disponible</span>
+      </div>
+      <div class="sbs-inv-item hi">
+        <div class="sbs-inv-name">Box Apéro Gourmand</div>
+        <div class="sbs-inv-price">49,99 €</div>
+        <div class="sbs-inv-qty">180 unités</div>
+        <span class="sbs-inv-badge">Disponible</span>
+      </div>
+      <div class="sbs-inv-item hi">
+        <div class="sbs-inv-name">Box Signature</div>
+        <div class="sbs-inv-price">64,99 €</div>
+        <div class="sbs-inv-qty">180 unités</div>
+        <span class="sbs-inv-badge">Disponible</span>
+      </div>
+      <div class="sbs-inv-item hi">
+        <div class="sbs-inv-name">Box Ibérique</div>
+        <div class="sbs-inv-price">49,99 €</div>
+        <div class="sbs-inv-qty">178 unités</div>
+        <span class="sbs-inv-badge">Disponible</span>
+      </div>
+      <div class="sbs-inv-item hi">
+        <div class="sbs-inv-name">Box Charcuterie Fine</div>
+        <div class="sbs-inv-price">34,99 €</div>
+        <div class="sbs-inv-qty">174 unités</div>
+        <span class="sbs-inv-badge">Disponible</span>
+      </div>
+      <div class="sbs-inv-item hi">
+        <div class="sbs-inv-name">Box XXL Conviviale</div>
+        <div class="sbs-inv-price">59,99 €</div>
+        <div class="sbs-inv-qty">179 unités</div>
+        <span class="sbs-inv-badge">Disponible</span>
+      </div>
+      <div class="sbs-inv-item mid">
+        <div class="sbs-inv-name">Box Apéro Caractère</div>
+        <div class="sbs-inv-price">39,99 €</div>
+        <div class="sbs-inv-qty">98 unités</div>
+        <span class="sbs-inv-badge">Stock moyen</span>
+      </div>
+      <div class="sbs-inv-item lo">
+        <div class="sbs-inv-name">Box Apéro Terroir</div>
+        <div class="sbs-inv-price">39,99 €</div>
+        <div class="sbs-inv-qty">79 unités</div>
+        <span class="sbs-inv-badge">Stock limité ⚠️</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FIDÉLISATION -->
+  <div class="sbs-sec">
+    <div class="sbs-sec-title">🔁 Fidélisation clients</div>
+    <div class="sbs-sec-note">Nouveaux vs. clients fidèles · 6 derniers mois</div>
+    <div class="sbs-loy">
+      <div class="sbs-loy-row">
+        <div class="sbs-loy-m">Jan</div>
+        <div class="sbs-loy-bars">
+          <div class="sbs-loy-bar new" style="width:83%"><span>5 nouveaux</span></div>
+          <div class="sbs-loy-bar ret" style="width:17%"><span>1 fidèle</span></div>
+        </div>
+        <div class="sbs-loy-total">6 clients</div>
+      </div>
+      <div class="sbs-loy-row">
+        <div class="sbs-loy-m">Fév</div>
+        <div class="sbs-loy-bars">
+          <div class="sbs-loy-bar new" style="width:100%"><span>3 nouveaux</span></div>
+        </div>
+        <div class="sbs-loy-total">3 clients</div>
+      </div>
+      <div class="sbs-loy-row">
+        <div class="sbs-loy-m">Mar</div>
+        <div class="sbs-loy-bars">
+          <div class="sbs-loy-bar new" style="width:85%"><span>17 nouveaux</span></div>
+          <div class="sbs-loy-bar ret" style="width:15%"><span>3 fidèles</span></div>
+        </div>
+        <div class="sbs-loy-total">20 clients</div>
+      </div>
+      <div class="sbs-loy-row">
+        <div class="sbs-loy-m">Avr</div>
+        <div class="sbs-loy-bars">
+          <div class="sbs-loy-bar new" style="width:94%"><span>60 nouveaux</span></div>
+          <div class="sbs-loy-bar ret" style="width:6%"><span>4</span></div>
+        </div>
+        <div class="sbs-loy-total">64 clients</div>
+      </div>
+      <div class="sbs-loy-row">
+        <div class="sbs-loy-m">Mai</div>
+        <div class="sbs-loy-bars">
+          <div class="sbs-loy-bar new" style="width:86.5%"><span>205 nouveaux</span></div>
+          <div class="sbs-loy-bar ret" style="width:13.5%"><span>32 fidèles</span></div>
+        </div>
+        <div class="sbs-loy-total">237 clients</div>
+      </div>
+      <div class="sbs-loy-row">
+        <div class="sbs-loy-m">Juin</div>
+        <div class="sbs-loy-bars">
+          <div class="sbs-loy-bar new" style="width:79.8%"><span>134 nouveaux</span></div>
+          <div class="sbs-loy-bar ret" style="width:20.2%"><span>34 fidèles</span></div>
+        </div>
+        <div class="sbs-loy-total">168 clients</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRIX -->
+  <div class="sbs-sec">
+    <div class="sbs-sec-title">💰 Gamme de prix</div>
+    <div class="sbs-sec-note">De l'entrée de gamme au coffret premium</div>
+    <div class="sbs-prices">
+      <div class="sbs-price">
+        <div class="sbs-price-lbl">Entrée de gamme</div>
+        <div class="sbs-price-val">24,99 €</div>
+        <div class="sbs-price-name">Mini Box Apéro</div>
+        <div class="sbs-price-desc">3 charcuteries · Format découverte</div>
+      </div>
+      <div class="sbs-price pop">
+        <div class="sbs-price-badge">⭐ Bestseller – 103 ventes</div>
+        <div class="sbs-price-lbl">Le plus populaire</div>
+        <div class="sbs-price-val">39,99 €</div>
+        <div class="sbs-price-name">Box Apéro Terroir</div>
+        <div class="sbs-price-desc">5 charcuteries · France & Espagne</div>
+      </div>
+      <div class="sbs-price">
+        <div class="sbs-price-lbl">Premium</div>
+        <div class="sbs-price-val">64,99 €</div>
+        <div class="sbs-price-name">Box Signature</div>
+        <div class="sbs-price-desc">7 charcuteries · Double IGP</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sbs-foot">Données Shopify Analytics · SaucBack.com · 18/06/2026</div>
+
+</div>
+
+<script>
+(function(){
+  function animCount(el){
+    var t=parseInt(el.dataset.count,10),sfx=el.dataset.sfx||'',dur=1400,start=null;
+    function step(ts){
+      if(!start)start=ts;
+      var p=Math.min((ts-start)/dur,1),e=1-Math.pow(1-p,3),v=Math.floor(e*t);
+      el.textContent=v.toLocaleString('fr-FR')+(sfx?' '+sfx:'');
+      if(p<1)requestAnimationFrame(step);
+      else el.textContent=t.toLocaleString('fr-FR')+(sfx?' '+sfx:'');
+    }
+    requestAnimationFrame(step);
+  }
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        e.target.querySelectorAll('[data-count]').forEach(animCount);
+        obs.unobserve(e.target);
+      }
+    });
+  },{threshold:0.2});
+  document.querySelectorAll('.sbs-kpis').forEach(function(el){obs.observe(el);});
+})();
+</script>
+
+</body>
+</html>

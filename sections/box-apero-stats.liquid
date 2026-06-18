@@ -1,0 +1,620 @@
+{% comment %}
+  Section : Statistiques Box Apéro SaucBack
+  Données issues de Shopify Analytics – Mis à jour juin 2026
+{% endcomment %}
+
+<section class="ba-stats" id="ba-stats">
+  <div class="ba-stats__container">
+
+    <!-- EN-TÊTE -->
+    <div class="ba-stats__header">
+      <span class="ba-stats__badge">📊 Statistiques en direct</span>
+      <h2 class="ba-stats__title">{{ section.settings.title }}</h2>
+      <p class="ba-stats__subtitle">{{ section.settings.subtitle }}</p>
+    </div>
+
+    <!-- KPIs PRINCIPAUX -->
+    <div class="ba-stats__kpis">
+      <div class="ba-stats__kpi ba-stats__kpi--primary">
+        <div class="ba-stats__kpi-icon">💶</div>
+        <div class="ba-stats__kpi-value" data-count="2798" data-suffix="€">0 €</div>
+        <div class="ba-stats__kpi-label">Chiffre d'affaires<br>Box Apéro (total)</div>
+      </div>
+      <div class="ba-stats__kpi">
+        <div class="ba-stats__kpi-icon">📦</div>
+        <div class="ba-stats__kpi-value" data-count="119" data-suffix="">0</div>
+        <div class="ba-stats__kpi-label">Commandes<br>passées</div>
+      </div>
+      <div class="ba-stats__kpi">
+        <div class="ba-stats__kpi-icon">🧺</div>
+        <div class="ba-stats__kpi-value" data-count="9" data-suffix="">0</div>
+        <div class="ba-stats__kpi-label">Références<br>Box Apéro</div>
+      </div>
+      <div class="ba-stats__kpi">
+        <div class="ba-stats__kpi-icon">🔁</div>
+        <div class="ba-stats__kpi-value" data-count="20" data-suffix="%">0%</div>
+        <div class="ba-stats__kpi-label">Taux de<br>fidélisation</div>
+      </div>
+      <div class="ba-stats__kpi">
+        <div class="ba-stats__kpi-icon">🛒</div>
+        <div class="ba-stats__kpi-value" data-count="40" data-suffix="€">0 €</div>
+        <div class="ba-stats__kpi-label">Panier moyen<br>Box Apéro</div>
+      </div>
+      <div class="ba-stats__kpi">
+        <div class="ba-stats__kpi-icon">📈</div>
+        <div class="ba-stats__kpi-value" data-count="1522" data-suffix="">0</div>
+        <div class="ba-stats__kpi-label">Box en stock<br>disponibles</div>
+      </div>
+    </div>
+
+    <!-- CROISSANCE MENSUELLE -->
+    <div class="ba-stats__section">
+      <h3 class="ba-stats__section-title">📈 Croissance mensuelle des commandes (boutique)</h3>
+      <p class="ba-stats__section-note">Depuis le lancement des Box Apéro en janvier 2026</p>
+      <div class="ba-stats__chart-wrapper">
+        <div class="ba-stats__chart">
+          {% assign months = "Jan,Fév,Mar,Avr,Mai,Juin*" | split: "," %}
+          {% assign values = "7,3,21,67,277,183" | split: "," %}
+          {% assign max_val = 277 %}
+          {% for val in values %}
+            {% assign pct = val | times: 100 | divided_by: max_val %}
+            <div class="ba-stats__bar-wrap">
+              <div class="ba-stats__bar-label-top">{{ val }}</div>
+              <div class="ba-stats__bar" style="--bar-height: {{ pct }}%;">
+                <div class="ba-stats__bar-inner"></div>
+              </div>
+              <div class="ba-stats__bar-label">{{ months[forloop.index0] }}</div>
+            </div>
+          {% endfor %}
+        </div>
+        <p class="ba-stats__chart-note">* Juin 2026 : données partielles au 18/06</p>
+      </div>
+    </div>
+
+    <!-- TOP PRODUITS BOX APÉRO -->
+    <div class="ba-stats__section">
+      <h3 class="ba-stats__section-title">🏆 Classement des Box Apéro</h3>
+      <p class="ba-stats__section-note">Performance commerciale de chaque box depuis le lancement</p>
+      <div class="ba-stats__products">
+
+        <div class="ba-stats__product ba-stats__product--gold">
+          <div class="ba-stats__product-rank">🥇</div>
+          <div class="ba-stats__product-info">
+            <div class="ba-stats__product-name">Box Apéro Terroir</div>
+            <div class="ba-stats__product-sub">5 Charcuteries · France & Espagne · 39,99 €</div>
+            <div class="ba-stats__product-bar-wrap">
+              <div class="ba-stats__product-bar" style="width: 100%"></div>
+            </div>
+          </div>
+          <div class="ba-stats__product-stats">
+            <span class="ba-stats__product-ca">2 248 €</span>
+            <span class="ba-stats__product-orders">103 cmd</span>
+          </div>
+        </div>
+
+        <div class="ba-stats__product ba-stats__product--silver">
+          <div class="ba-stats__product-rank">🥈</div>
+          <div class="ba-stats__product-info">
+            <div class="ba-stats__product-name">Box Charcuterie Fine</div>
+            <div class="ba-stats__product-sub">4 Spécialités · Saucisson, Lomo, Serrano IGP · 34,99 €</div>
+            <div class="ba-stats__product-bar-wrap">
+              <div class="ba-stats__product-bar" style="width: 8.4%"></div>
+            </div>
+          </div>
+          <div class="ba-stats__product-stats">
+            <span class="ba-stats__product-ca">188 €</span>
+            <span class="ba-stats__product-orders">6 cmd</span>
+          </div>
+        </div>
+
+        <div class="ba-stats__product ba-stats__product--bronze">
+          <div class="ba-stats__product-rank">🥉</div>
+          <div class="ba-stats__product-info">
+            <div class="ba-stats__product-name">Box Apéro Classique</div>
+            <div class="ba-stats__product-sub">4 Charcuteries · France & Espagne · 39,99 €</div>
+            <div class="ba-stats__product-bar-wrap">
+              <div class="ba-stats__product-bar" style="width: 4.9%"></div>
+            </div>
+          </div>
+          <div class="ba-stats__product-stats">
+            <span class="ba-stats__product-ca">109 €</span>
+            <span class="ba-stats__product-orders">3 cmd</span>
+          </div>
+        </div>
+
+        <div class="ba-stats__product">
+          <div class="ba-stats__product-rank">4</div>
+          <div class="ba-stats__product-info">
+            <div class="ba-stats__product-name">Box Ibérique</div>
+            <div class="ba-stats__product-sub">Chorizo IGP, Lomo, ¼ Serrano · 49,99 €</div>
+            <div class="ba-stats__product-bar-wrap">
+              <div class="ba-stats__product-bar" style="width: 3.8%"></div>
+            </div>
+          </div>
+          <div class="ba-stats__product-stats">
+            <span class="ba-stats__product-ca">85 €</span>
+            <span class="ba-stats__product-orders">2 cmd</span>
+          </div>
+        </div>
+
+        <div class="ba-stats__product">
+          <div class="ba-stats__product-rank">5</div>
+          <div class="ba-stats__product-info">
+            <div class="ba-stats__product-name">Box Apéro Caractère</div>
+            <div class="ba-stats__product-sub">Saucisson, Serrano IGP, Chorizo Fort · 39,99 €</div>
+            <div class="ba-stats__product-bar-wrap">
+              <div class="ba-stats__product-bar" style="width: 3.3%"></div>
+            </div>
+          </div>
+          <div class="ba-stats__product-stats">
+            <span class="ba-stats__product-ca">74 €</span>
+            <span class="ba-stats__product-orders">2 cmd</span>
+          </div>
+        </div>
+
+        <div class="ba-stats__product">
+          <div class="ba-stats__product-rank">6</div>
+          <div class="ba-stats__product-info">
+            <div class="ba-stats__product-name">Box XXL Conviviale</div>
+            <div class="ba-stats__product-sub">5 Charcuteries + ¼ Jambon Serrano · 59,99 €</div>
+            <div class="ba-stats__product-bar-wrap">
+              <div class="ba-stats__product-bar" style="width: 2.4%"></div>
+            </div>
+          </div>
+          <div class="ba-stats__product-stats">
+            <span class="ba-stats__product-ca">54 €</span>
+            <span class="ba-stats__product-orders">1 cmd</span>
+          </div>
+        </div>
+
+        <div class="ba-stats__product">
+          <div class="ba-stats__product-rank">7</div>
+          <div class="ba-stats__product-info">
+            <div class="ba-stats__product-name">Mini Box Apéro</div>
+            <div class="ba-stats__product-sub">3 Charcuteries · Format Découverte · 24,99 €</div>
+            <div class="ba-stats__product-bar-wrap">
+              <div class="ba-stats__product-bar" style="width: 1.8%"></div>
+            </div>
+          </div>
+          <div class="ba-stats__product-stats">
+            <span class="ba-stats__product-ca">41 €</span>
+            <span class="ba-stats__product-orders">2 cmd</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- STOCK DISPONIBLE -->
+    <div class="ba-stats__section">
+      <h3 class="ba-stats__section-title">🧺 Stock disponible par box</h3>
+      <p class="ba-stats__section-note">Inventaire en temps réel</p>
+      <div class="ba-stats__inventory">
+        {% assign inv_names = "Mini Box Apéro,Box Apéro Classique,Box Apéro Gourmand,Box Apéro Terroir,Box Charcuterie Fine,Box Ibérique,Box XXL Conviviale,Box Signature,Box Apéro Caractère" | split: "," %}
+        {% assign inv_vals  = "228,226,180,79,174,178,179,180,98" | split: "," %}
+        {% assign inv_prices= "24.99,39.99,49.99,39.99,34.99,49.99,59.99,64.99,39.99" | split: "," %}
+        {% for name in inv_names %}
+          {% assign stock = inv_vals[forloop.index0] | plus: 0 %}
+          {% assign status_class = "" %}
+          {% assign status_label = "" %}
+          {% if stock > 150 %}
+            {% assign status_class = "ba-stats__inv--high" %}
+            {% assign status_label = "Disponible" %}
+          {% elsif stock > 80 %}
+            {% assign status_class = "ba-stats__inv--mid" %}
+            {% assign status_label = "Stock moyen" %}
+          {% else %}
+            {% assign status_class = "ba-stats__inv--low" %}
+            {% assign status_label = "Stock limité" %}
+          {% endif %}
+          <div class="ba-stats__inv-item {{ status_class }}">
+            <div class="ba-stats__inv-name">{{ name }}</div>
+            <div class="ba-stats__inv-price">{{ inv_prices[forloop.index0] }} €</div>
+            <div class="ba-stats__inv-count">{{ stock }} unités</div>
+            <div class="ba-stats__inv-badge">{{ status_label }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- FIDÉLISATION CLIENTS -->
+    <div class="ba-stats__section">
+      <h3 class="ba-stats__section-title">🔁 Fidélisation clients</h3>
+      <p class="ba-stats__section-note">Nouveaux clients vs. clients fidèles (6 derniers mois)</p>
+      <div class="ba-stats__loyalty">
+        {% assign loy_months = "Jan,Fév,Mar,Avr,Mai,Juin" | split: "," %}
+        {% assign loy_new     = "5,3,17,60,205,134" | split: "," %}
+        {% assign loy_return  = "1,0,3,4,32,34" | split: "," %}
+        {% assign loy_total   = "6,3,20,64,237,168" | split: "," %}
+        {% for m in loy_months %}
+          {% assign new_pct = loy_new[forloop.index0] | times: 100 | divided_by: loy_total[forloop.index0] %}
+          {% assign ret_pct = loy_return[forloop.index0] | times: 100 | divided_by: loy_total[forloop.index0] %}
+          <div class="ba-stats__loyalty-row">
+            <div class="ba-stats__loyalty-month">{{ m }}</div>
+            <div class="ba-stats__loyalty-bars">
+              <div class="ba-stats__loyalty-bar ba-stats__loyalty-bar--new" style="width: {{ new_pct }}%">
+                <span>{{ loy_new[forloop.index0] }} nouveaux</span>
+              </div>
+              {% if ret_pct > 0 %}
+              <div class="ba-stats__loyalty-bar ba-stats__loyalty-bar--return" style="width: {{ ret_pct }}%">
+                <span>{{ loy_return[forloop.index0] }} fidèles</span>
+              </div>
+              {% endif %}
+            </div>
+            <div class="ba-stats__loyalty-total">{{ loy_total[forloop.index0] }} clients</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- FOURCHETTE DE PRIX -->
+    <div class="ba-stats__section">
+      <h3 class="ba-stats__section-title">💰 Gamme de prix des Box Apéro</h3>
+      <div class="ba-stats__pricing">
+        <div class="ba-stats__price-card">
+          <div class="ba-stats__price-label">Entrée de gamme</div>
+          <div class="ba-stats__price-value">24,99 €</div>
+          <div class="ba-stats__price-name">Mini Box Apéro</div>
+          <div class="ba-stats__price-desc">3 charcuteries · Format découverte</div>
+        </div>
+        <div class="ba-stats__price-card ba-stats__price-card--popular">
+          <div class="ba-stats__price-badge">⭐ Bestseller</div>
+          <div class="ba-stats__price-label">Le plus populaire</div>
+          <div class="ba-stats__price-value">39,99 €</div>
+          <div class="ba-stats__price-name">Box Apéro Terroir</div>
+          <div class="ba-stats__price-desc">5 charcuteries · France & Espagne</div>
+        </div>
+        <div class="ba-stats__price-card">
+          <div class="ba-stats__price-label">Premium</div>
+          <div class="ba-stats__price-value">64,99 €</div>
+          <div class="ba-stats__price-name">Box Signature</div>
+          <div class="ba-stats__price-desc">7 charcuteries · Double IGP</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="ba-stats__footer">
+      <p>Données extraites de Shopify Analytics · SaucBack.com · Mis à jour le {{ "now" | date: "%d/%m/%Y" }}</p>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .ba-stats {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: {{ section.settings.bg_color }};
+    color: #1a1a2e;
+    padding: 60px 0;
+  }
+  .ba-stats__container {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* HEADER */
+  .ba-stats__header {
+    text-align: center;
+    margin-bottom: 52px;
+  }
+  .ba-stats__badge {
+    display: inline-block;
+    background: #fff3cd;
+    color: #856404;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+  .ba-stats__title {
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 800;
+    margin: 0 0 12px;
+    line-height: 1.15;
+  }
+  .ba-stats__subtitle {
+    font-size: 1.1rem;
+    color: #555;
+    margin: 0;
+  }
+
+  /* KPIs */
+  .ba-stats__kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 20px;
+    margin-bottom: 52px;
+  }
+  .ba-stats__kpi {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    box-shadow: 0 2px 16px rgba(0,0,0,.07);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .ba-stats__kpi:hover { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(0,0,0,.12); }
+  .ba-stats__kpi--primary {
+    background: linear-gradient(135deg, #c8102e 0%, #8b0000 100%);
+    color: #fff;
+    grid-column: span 2;
+  }
+  @media (max-width: 600px) { .ba-stats__kpi--primary { grid-column: span 1; } }
+  .ba-stats__kpi-icon { font-size: 2rem; margin-bottom: 8px; }
+  .ba-stats__kpi-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 8px;
+    color: #c8102e;
+  }
+  .ba-stats__kpi--primary .ba-stats__kpi-value { color: #fff; font-size: 2.4rem; }
+  .ba-stats__kpi-label {
+    font-size: .78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #666;
+    line-height: 1.4;
+  }
+  .ba-stats__kpi--primary .ba-stats__kpi-label { color: rgba(255,255,255,.85); }
+
+  /* SECTIONS */
+  .ba-stats__section {
+    background: #fff;
+    border-radius: 20px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.06);
+  }
+  .ba-stats__section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .ba-stats__section-note {
+    font-size: .85rem;
+    color: #888;
+    margin: 0 0 28px;
+  }
+
+  /* BAR CHART */
+  .ba-stats__chart-wrapper { overflow-x: auto; }
+  .ba-stats__chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    height: 220px;
+    min-width: 400px;
+    padding-bottom: 4px;
+  }
+  .ba-stats__bar-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .ba-stats__bar-label-top {
+    font-size: .78rem;
+    font-weight: 700;
+    color: #444;
+    margin-bottom: 4px;
+  }
+  .ba-stats__bar {
+    width: 100%;
+    height: var(--bar-height);
+    min-height: 4px;
+    max-height: 180px;
+    border-radius: 8px 8px 0 0;
+    overflow: hidden;
+  }
+  .ba-stats__bar-inner {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #e63950 0%, #c8102e 100%);
+    animation: growBar .8s ease-out both;
+    transform-origin: bottom;
+  }
+  @keyframes growBar { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .ba-stats__bar-label {
+    font-size: .78rem;
+    font-weight: 600;
+    color: #555;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .ba-stats__chart-note { font-size: .75rem; color: #aaa; margin-top: 12px; }
+
+  /* PRODUCT RANKING */
+  .ba-stats__products { display: flex; flex-direction: column; gap: 12px; }
+  .ba-stats__product {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    background: #f8f9fa;
+    transition: background .2s;
+  }
+  .ba-stats__product:hover { background: #f0f0f0; }
+  .ba-stats__product--gold { background: #fffbe6; border-left: 4px solid #f5a623; }
+  .ba-stats__product--silver { background: #f5f5f5; border-left: 4px solid #9e9e9e; }
+  .ba-stats__product--bronze { background: #fff3ee; border-left: 4px solid #cd7f32; }
+  .ba-stats__product-rank { font-size: 1.4rem; min-width: 36px; text-align: center; }
+  .ba-stats__product-info { flex: 1; min-width: 0; }
+  .ba-stats__product-name { font-weight: 700; font-size: .95rem; }
+  .ba-stats__product-sub { font-size: .78rem; color: #777; margin: 2px 0 8px; }
+  .ba-stats__product-bar-wrap { background: #e9ecef; border-radius: 4px; height: 6px; }
+  .ba-stats__product-bar { height: 6px; background: linear-gradient(90deg, #c8102e, #e63950); border-radius: 4px; }
+  .ba-stats__product-stats { text-align: right; min-width: 90px; }
+  .ba-stats__product-ca { display: block; font-weight: 800; font-size: 1.05rem; color: #c8102e; }
+  .ba-stats__product-orders { font-size: .78rem; color: #888; }
+
+  /* INVENTORY */
+  .ba-stats__inventory {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+  }
+  .ba-stats__inv-item {
+    padding: 16px;
+    border-radius: 12px;
+    border: 1.5px solid #e9ecef;
+    background: #fff;
+  }
+  .ba-stats__inv--high { border-color: #28a745; }
+  .ba-stats__inv--mid  { border-color: #ffc107; }
+  .ba-stats__inv--low  { border-color: #dc3545; }
+  .ba-stats__inv-name { font-weight: 700; font-size: .88rem; margin-bottom: 4px; }
+  .ba-stats__inv-price { font-size: .78rem; color: #888; margin-bottom: 6px; }
+  .ba-stats__inv-count { font-size: 1.4rem; font-weight: 800; color: #333; }
+  .ba-stats__inv-badge {
+    display: inline-block;
+    font-size: .7rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 20px;
+    margin-top: 6px;
+  }
+  .ba-stats__inv--high .ba-stats__inv-badge { background: #d4edda; color: #155724; }
+  .ba-stats__inv--mid  .ba-stats__inv-badge { background: #fff3cd; color: #856404; }
+  .ba-stats__inv--low  .ba-stats__inv-badge { background: #f8d7da; color: #721c24; }
+
+  /* LOYALTY */
+  .ba-stats__loyalty { display: flex; flex-direction: column; gap: 14px; }
+  .ba-stats__loyalty-row { display: flex; align-items: center; gap: 16px; }
+  .ba-stats__loyalty-month { width: 32px; font-weight: 700; font-size: .88rem; color: #555; }
+  .ba-stats__loyalty-bars { flex: 1; display: flex; gap: 4px; min-height: 28px; }
+  .ba-stats__loyalty-bar {
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    border-radius: 6px;
+    min-width: 2%;
+    transition: width .6s ease;
+  }
+  .ba-stats__loyalty-bar span { font-size: .72rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff; }
+  .ba-stats__loyalty-bar--new    { background: #c8102e; }
+  .ba-stats__loyalty-bar--return { background: #e63950; opacity: .8; }
+  .ba-stats__loyalty-total { font-size: .8rem; color: #888; min-width: 70px; text-align: right; }
+
+  /* PRICING */
+  .ba-stats__pricing {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+  .ba-stats__price-card {
+    border: 2px solid #e9ecef;
+    border-radius: 16px;
+    padding: 28px 24px;
+    text-align: center;
+    position: relative;
+    transition: transform .2s;
+  }
+  .ba-stats__price-card:hover { transform: translateY(-4px); }
+  .ba-stats__price-card--popular {
+    border-color: #c8102e;
+    background: linear-gradient(135deg, #fff5f5, #fff);
+    box-shadow: 0 4px 24px rgba(200,16,46,.15);
+  }
+  .ba-stats__price-badge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #c8102e;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .ba-stats__price-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: #888; margin-bottom: 12px; font-weight: 600; }
+  .ba-stats__price-value { font-size: 2.4rem; font-weight: 800; color: #c8102e; margin-bottom: 8px; }
+  .ba-stats__price-name { font-weight: 700; font-size: .95rem; margin-bottom: 6px; }
+  .ba-stats__price-desc { font-size: .8rem; color: #777; }
+
+  /* FOOTER */
+  .ba-stats__footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: .78rem;
+    color: #bbb;
+  }
+</style>
+
+<script>
+  (function() {
+    function animateCount(el) {
+      var target = parseInt(el.dataset.count, 10);
+      var suffix = el.dataset.suffix || '';
+      var duration = 1400;
+      var start = null;
+      function step(ts) {
+        if (!start) start = ts;
+        var progress = Math.min((ts - start) / duration, 1);
+        var ease = 1 - Math.pow(1 - progress, 3);
+        var value = Math.floor(ease * target);
+        el.textContent = value.toLocaleString('fr-FR') + (suffix ? ' ' + suffix : '');
+        if (progress < 1) requestAnimationFrame(step);
+        else el.textContent = target.toLocaleString('fr-FR') + (suffix ? ' ' + suffix : '');
+      }
+      requestAnimationFrame(step);
+    }
+
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.querySelectorAll('[data-count]').forEach(animateCount);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.2 });
+
+    document.querySelectorAll('.ba-stats__kpis').forEach(function(el) {
+      observer.observe(el);
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Box Apéro – Statistiques",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Titre",
+      "default": "Nos Box Apéro en chiffres"
+    },
+    {
+      "type": "textarea",
+      "id": "subtitle",
+      "label": "Sous-titre",
+      "default": "Charcuteries artisanales France & Espagne · Depuis le lancement en 2026"
+    },
+    {
+      "type": "color",
+      "id": "bg_color",
+      "label": "Couleur de fond",
+      "default": "#f4f4f4"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Box Apéro – Statistiques"
+    }
+  ]
+}
+{% endschema %}
