@@ -1,0 +1,36 @@
+# Secrets — ne jamais versionner
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+token*.json
+service-account*.json
+
+# Dépendances
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Sorties et fichiers temporaires
+dist/
+build/
+*.log
+logs/
+tmp/
+.cache/
+
+# Factures et documents réels (jamais dans Git — RGPD)
+*.pdf
+*.jpg
+*.jpeg
+*.png
+!tests/fixtures/**
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
