@@ -20,7 +20,7 @@ construction. Numérotation : tronc commun **1–13**, puis routes **A14–A19**
 | | |
 |---|---|
 | Application / action | Gmail / Watch Emails (trigger « instant » non requis ; polling) |
-| Valeurs fixes | Requête : `label:FACTURES-A-TRAITER has:attachment` · Max results : `5` · Mark as read : `Non` |
+| Valeurs fixes | Requête : `label:FACTURES-AXONAUT has:attachment` · Max results : `5` · Mark as read : `Non` |
 | Option critique | Récupération du **contenu des pièces jointes** activée (« Attachments » / fetch attachments) — c'est elle qui remplace le « téléchargement » (étape 5 du plan : il n'existe pas de module Gmail « Download an Attachment » séparé — `MANUAL_CONFIRMATION_REQUIRED` ; si votre version du connecteur en propose un, il peut s'insérer après l'Iterator sans rien changer d'autre) |
 | Planification | Toutes les 15 min |
 | Données produites | `id` (message), `threadId`, `subject`, `from`, `date`, `attachments[]` (nom, MIME, taille, données) |
@@ -52,7 +52,7 @@ Make n'est pas un module : c'est une condition posée sur un lien entre modules)
 |---|---|
 | Valeurs fixes | Dossier cible : ID de `00_ARCHIVES_ORIGINALES/2026/07_JUILLET` |
 | Valeurs dynamiques | Nom : `{{formatDate(now; "YYYY-MM-DD_HHmmss")}}_{{3.fileName}}` · Données : `{{3.data}}` |
-| Gestion d'erreurs | **Break** (retry ×3, intervalle 2 min) ; échec final → branche E (le libellé `A-TRAITER` reste, rien n'est perdu, retraitement au cycle suivant) |
+| Gestion d'erreurs | **Break** (retry ×3, intervalle 2 min) ; échec final → branche E (le libellé `FACTURES AXONAUT` reste, rien n'est perdu, retraitement au cycle suivant) |
 | Données produites | `id` (fichier), `webViewLink` |
 
 ### 8. Analyse IA — HTTP — Make a Request *(Claude)*
@@ -166,7 +166,7 @@ déplacement ou copie » est tranché en **copie**.)
 | | |
 |---|---|
 | Application / action | Gmail / Modify email labels — `MANUAL_CONFIRMATION_REQUIRED` sur l'intitulé exact (« Modify email labels » / « Add/remove labels ») ; à défaut, deux modules successifs « Add a label » + « Remove a label » |
-| Valeurs | Message : `{{1.id}}` · Ajouter : `FACTURES/ENVOYEES-AXONAUT` · Retirer : `FACTURES/A-TRAITER` |
+| Valeurs | Message : `{{1.id}}` · Ajouter : `FACTURES AXONAUT/ENVOYEES` · Retirer : `FACTURES AXONAUT` |
 
 ---
 
@@ -179,7 +179,7 @@ déplacement ou copie » est tranché en **copie**.)
 | B14 | *(pas de module Data Store)* | Le plan prévoyait « mise à jour du statut duplicate » : volontairement **non fait** — le record décrit le premier traitement, qui fait foi ; écraser son statut détruirait l'audit. Le doublon vit dans le journal et l'alerte |
 | B15 | Google Sheets — Add a Row | `processing_status` = `duplicate` · `validation_status` = `not_applicable` · `anomaly_codes` = `POSSIBLE_DUPLICATE` · la référence du premier traitement (date, statut, URL Drive, tirés du record retourné par le module 12) est portée par l'alerte B19 — `manual_review_notes` reste réservée aux humains |
 | B16 | Google Drive — Upload a File | Dossier `04_DOUBLONS` · nom `{{formatDate(now; "YYYY-MM-DD")}}_DOUBLON_{{3.fileName}}` · données `{{3.data}}` |
-| B17–B18 | Gmail — Modify email labels | Ajouter `FACTURES/DOUBLONS` · Retirer `FACTURES/A-TRAITER` (un seul module si l'action combinée existe) |
+| B17–B18 | Gmail — Modify email labels | Ajouter `FACTURES AXONAUT/DOUBLONS` · Retirer `FACTURES AXONAUT` (un seul module si l'action combinée existe) |
 | B19 | Gmail — Send an Email *(alerte)* | Objet : `[FACTURES][DOUBLON] {{9.supplier_name}} {{9.invoice_number}}` · corps : clé `{{11.dedup_key}}`, données du record d'origine (date de 1er traitement, URLs Drive), lien Gmail du nouvel email. **Signale aussi le cas particulier : record trouvé avec `processing_status = sending`** (envoi incertain → vérifier dans Axonaut avant toute action) |
 
 **Aucun envoi à `expense@axonaut.com`.**
@@ -191,7 +191,7 @@ déplacement ou copie » est tranché en **copie**.)
 | C14 | *(pas de record sous la clé principale)* | Une facture en anomalie doit rester retraitable après correction — créer un record la ferait passer pour un doublon au retraitement. L'anomalie est enregistrée au journal (C15) |
 | C15 | Google Sheets — Add a Row | `processing_status` = `anomaly` · `validation_status` = `not_applicable` · `anomaly_codes` = `{{join(9.anomalies; "\|")}}` complété des contrôles locaux échoués (`11.anomaly_codes_local`) |
 | C16 | Google Drive — Upload a File | Dossier `05_ANOMALIES` · nom `{{formatDate(now; "YYYY-MM-DD")}}_ANOMALIE_{{3.fileName}}` |
-| C17–C18 | Gmail — Modify email labels | Ajouter `FACTURES/ANOMALIES` · Retirer `FACTURES/A-TRAITER` |
+| C17–C18 | Gmail — Modify email labels | Ajouter `FACTURES AXONAUT/ANOMALIES` · Retirer `FACTURES AXONAUT` |
 | C19 | Gmail — Send an Email *(alerte)* | Objet : `[FACTURES][ANOMALIE] {{9.supplier_name}} {{9.invoice_number}}` · corps : codes d'anomalie, `confidence`, montants, liens Drive/Gmail — IBAN masqué (`{{11.iban_masked}}`) |
 
 **Aucun envoi à `expense@axonaut.com`.**
@@ -208,7 +208,7 @@ après épuisement des retries, la branche du handler exécute :
 | E14 | Google Sheets — Add a Row | `processing_status` = `technical_error` · `last_error` = message d'erreur du module (sans secrets) · `retry_count` = 3 |
 | E15 | Data Store — Update a Record *(conditionnel)* | Uniquement si un record existe déjà (échec de A15 après A14) : `retry_count` +1, `last_error`, `updated_at`. Filtre entrant : `{{12.exists}} = true` OU erreur survenue en A15. `MANUAL_CONFIRMATION_REQUIRED` : intitulé exact « Update a record » |
 | E16 | Google Drive — Upload a File *(si pertinent)* | Dossier `06_ERREURS_TECHNIQUES` · uniquement si l'erreur survient APRÈS l'archivage (modules 8+) ; si l'archivage 7 lui-même a échoué, ne rien uploader (le fichier reste dans Gmail) |
-| E17 | Gmail — Modify email labels | Ajouter `FACTURES/ERREURS-TECHNIQUES` · **NE PAS retirer `FACTURES/A-TRAITER`** : l'email reste dans la file → le cycle suivant retente automatiquement ; l'idempotence (A14 avant A15 + clé Data Store) garantit qu'aucun renvoi en double n'est possible |
+| E17 | Gmail — Modify email labels | Ajouter `FACTURES AXONAUT/ERREURS-TECHNIQUES` · **NE PAS retirer `FACTURES AXONAUT`** : l'email reste dans la file → le cycle suivant retente automatiquement ; l'idempotence (A14 avant A15 + clé Data Store) garantit qu'aucun renvoi en double n'est possible |
 | E18 | Gmail — Send an Email *(alerte)* | Objet : `[FACTURES][ERREUR TECHNIQUE] {{3.fileName}}` · module en échec, message d'erreur, nombre de tentatives, lien Gmail |
 | E19 | — | Fin de la branche ; l'exécution est marquée en erreur gérée (visible dans l'historique Make) |
 

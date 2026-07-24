@@ -35,16 +35,16 @@
 | | |
 |---|---|
 | Écran | Gmail → roue dentée → Voir tous les paramètres → onglet **Libellés** |
-| Valeurs | `FACTURES` puis 5 sous-libellés : `A-TRAITER`, `ENVOYEES-AXONAUT`, `DOUBLONS`, `ANOMALIES`, `ERREURS-TECHNIQUES` (sans accents) |
+| Valeurs | Libellé parent `FACTURES AXONAUT` (= dossier où glisser les factures) + 4 sous-libellés : `ENVOYEES`, `DOUBLONS`, `ANOMALIES`, `ERREURS-TECHNIQUES` (sans accents) |
 | Procédure | `docs/gmail-labels.md` §1 |
-| Vérification | Recherche `label:FACTURES-A-TRAITER` reconnue par Gmail |
+| Vérification | Recherche `label:FACTURES-AXONAUT` reconnue par Gmail |
 
 ### B3. Filtre Gmail d'entrée
 
 | | |
 |---|---|
 | Écran | Gmail → Paramètres → **Filtres et adresses bloquées** → Créer un filtre |
-| Valeur | Requête et action exactes : `docs/gmail-labels.md` §2 — action = appliquer `FACTURES/A-TRAITER` **uniquement** (jamais de transfert automatique) |
+| Valeur | Requête et action exactes : `docs/gmail-labels.md` §2 — action = appliquer `FACTURES AXONAUT` **uniquement** (jamais de transfert automatique) |
 | Vérification | S'envoyer le PDF de test avec objet « Facture de test » → libellé appliqué automatiquement |
 
 ### B4. Dossiers Google Drive
@@ -103,7 +103,7 @@
 | | |
 |---|---|
 | Écran | Gmail + Make (Run once) + Axonaut + Drive + Sheets |
-| Procédure | `make-scenario.md` §8 T1 (adapté à la numérotation Phase 3) : envoi du PDF de test libellé `A-TRAITER` → Run once → vérifier chaque bulle d'exécution → dépense dans Axonaut → record Data Store `sent_to_axonaut` → ligne journal → copie Drive → libellés |
+| Procédure | `make-scenario.md` §8 T1 (adapté à la numérotation Phase 3) : envoi du PDF de test glissé dans le libellé `FACTURES AXONAUT` → Run once → vérifier chaque bulle d'exécution → dépense dans Axonaut → record Data Store `sent_to_axonaut` → ligne journal → copie Drive → libellés |
 | Vérification | Checklist T1 complète, puis T2 (doublon) → T7 (panne) |
 
 ## C. Ce qui reste interdit pendant toute la Phase 3

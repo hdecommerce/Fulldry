@@ -15,7 +15,7 @@ déduplication. Axonaut réalise l'OCR final et crée la dépense « à traiter 
 La validation reste **humaine, dans Axonaut**. Aucun paiement n'est jamais déclenché.
 
 ```
-Gmail — Watch Emails (label FACTURES/A-TRAITER, has:attachment)
+Gmail — Watch Emails (label FACTURES AXONAUT, has:attachment)
   → Iterator pièces jointes
   → Filtre PDF/JPG/PNG, ≥ 15 Ko
   → Archivage de l'original dans Drive (ARCHIVES ORIGINALES) — jamais modifié
@@ -28,15 +28,15 @@ Gmail — Watch Emails (label FACTURES/A-TRAITER, has:attachment)
       │    → enregistrement Data Store (hash, n° facture, fournisseur, TTC, ID Gmail)
       │    → statut « envoyée à Axonaut — validation requise »
       │    → journal → copie Drive « ENVOYÉES AXONAUT » (nom normalisé)
-      │    → libellé Gmail FACTURES/ENVOYEES-AXONAUT, retrait A-TRAITER
+      │    → libellé Gmail FACTURES AXONAUT/ENVOYEES, retrait FACTURES AXONAUT
       ├─ Route B — DOUBLON
       │    → AUCUN envoi à Axonaut
-      │    → libellé FACTURES/DOUBLONS, retrait A-TRAITER
+      │    → libellé FACTURES AXONAUT/DOUBLONS, retrait FACTURES AXONAUT
       │    → journal + alerte (détails du doublon)
       └─ Route C — ANOMALIE (route par défaut)
            → AUCUN envoi à Axonaut
            → copie Drive « ANOMALIES »
-           → libellé FACTURES/ANOMALIES, retrait A-TRAITER
+           → libellé FACTURES AXONAUT/ANOMALIES, retrait FACTURES AXONAUT
            → journal + alerte détaillée
 ```
 
@@ -62,14 +62,15 @@ de tout cela côté Make.
 
 ## 3. Déclencheur et libellés Gmail
 
-Requête du trigger : `label:FACTURES-A-TRAITER has:attachment`.
+Requête du trigger : `label:FACTURES-AXONAUT has:attachment`.
 
 | Libellé | Rôle |
 |---|---|
-| `FACTURES/A-TRAITER` | File d'attente d'entrée |
-| `FACTURES/ENVOYEES-AXONAUT` | Facture transmise à Axonaut — validation requise (Route A) |
-| `FACTURES/DOUBLONS` | Doublon détecté, non transmise (Route B) |
-| `FACTURES/ANOMALIES` | Anomalie ou erreur technique, non transmise (Route C) |
+| `FACTURES AXONAUT` | **File d'attente d'entrée** : glisser un email de facture sur ce libellé (« dossier ») déclenche son traitement au cycle Make suivant |
+| `FACTURES AXONAUT/ENVOYEES` | Facture transmise à Axonaut — validation requise (Route A) |
+| `FACTURES AXONAUT/DOUBLONS` | Doublon détecté, non transmise (Route B) |
+| `FACTURES AXONAUT/ANOMALIES` | Anomalie fonctionnelle, non transmise (Route C) |
+| `FACTURES AXONAUT/ERREURS-TECHNIQUES` | Erreur technique — l'email garde aussi `FACTURES AXONAUT` pour être retraité (Route E) |
 
 > Libellés **sans accents ni espaces** dans les identifiants (les requêtes `label:`
 > sur libellés accentués/espacés sont fragiles). L'affichage humain reste libre.
@@ -189,7 +190,7 @@ sont réservés au Plan B).
 
 - **Techniques** (Gmail/Drive/IA indisponibles, timeout) : gestionnaire *Break*,
   3 tentatives, délai progressif ; au-delà → Route C + alerte. L'email **conserve**
-  `A-TRAITER`, l'original reste archivé, rien n'est envoyé à Axonaut.
+  `FACTURES AXONAUT`, l'original reste archivé, rien n'est envoyé à Axonaut.
 - **Fonctionnelles** (JSON invalide, incohérence, doublon) : pas de retry — B ou C.
 - Aucune erreur silencieuse : ligne `failed`/`anomaly` au journal + alerte email
   détaillée (données sensibles masquées).

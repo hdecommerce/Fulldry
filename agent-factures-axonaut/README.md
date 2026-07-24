@@ -36,14 +36,14 @@ dépendance externe). **PDF de test** : `python3 scripts/generate_test_invoice.p
 
 ## Ce que fait l'agent
 
-1. Surveille le libellé Gmail `FACTURES/A-TRAITER` (emails avec pièce jointe).
+1. Surveille le libellé Gmail `FACTURES AXONAUT` (emails avec pièce jointe).
 2. Filtre les pièces jointes : `application/pdf`, `image/jpeg`, `image/png`, ≥ 15 Ko.
 3. Archive immédiatement l'original dans Drive (`ARCHIVES ORIGINALES/`) — jamais modifié, jamais supprimé.
 4. Extrait les données comptables par IA (JSON strict, score de confiance).
 5. Contrôle la cohérence HT / TVA / TTC (tolérance 0,02 €), la société destinataire, le SIRET, les dates.
 6. Détecte les doublons via une clé normalisée (fournisseur + n° facture + TTC) + hash SHA-256 du fichier (Data Store) — un même document ne peut jamais être envoyé deux fois.
 7. Route la facture : **A — Valide** (envoi à `expense@axonaut.com`, statut « envoyée à Axonaut — validation requise »), **B — Doublon** (aucun envoi, alerte), **C — Anomalie** (aucun envoi, alerte).
-8. Classe le fichier dans Drive (`ENVOYÉES AXONAUT/`, `DOUBLONS/`, `ANOMALIES/`) et met à jour les libellés Gmail (`FACTURES/ENVOYEES-AXONAUT`, `FACTURES/DOUBLONS`, `FACTURES/ANOMALIES`).
+8. Classe le fichier dans Drive (`ENVOYÉES AXONAUT/`, `DOUBLONS/`, `ANOMALIES/`) et met à jour les libellés Gmail (`FACTURES AXONAUT/ENVOYEES`, `FACTURES AXONAUT/DOUBLONS`, `FACTURES AXONAUT/ANOMALIES`).
 9. Journalise chaque événement (journal d'audit complet).
 10. Laisse Axonaut créer la dépense « à traiter » via son OCR — la validation finale reste humaine, dans Axonaut.
 
@@ -58,7 +58,7 @@ dépendance externe). **PDF de test** : `python3 scripts/generate_test_invoice.p
 ## Architecture (résumé)
 
 ```
-Gmail (Watch Emails, label FACTURES/A-TRAITER)
+Gmail (Watch Emails, label FACTURES AXONAUT)
   → Iterator pièces jointes → Filtre (PDF/JPG/PNG, ≥15 Ko)
   → Archivage original Google Drive (ARCHIVES ORIGINALES)
   → Analyse IA (Claude API) → Parse JSON → Normalisation
