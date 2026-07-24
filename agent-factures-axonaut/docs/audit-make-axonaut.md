@@ -1,6 +1,21 @@
 # Audit Phase 1 — Intégrations Make & API Axonaut
 
-**Date : 2026-07-24 — Statut : terminé, avec points bloquants à confirmer avant Phase 3.**
+**Date : 2026-07-24 — Statut : terminé. Points bloquants tranchés le 2026-07-24
+(vérification HD ECOMMERCE) — voir §5, décisions actées dans `architecture.md`.**
+
+> **Résumé des décisions :**
+> 1. Le connecteur Make Axonaut permet bien de **créer des dépenses**
+>    (« Create an Expense ») — confirmé par la documentation du connecteur.
+>    Les noms exacts des champs seront relevés dans le module connecté au compte,
+>    jamais figés à l'avance.
+> 2. **V1 retenue : envoi des factures à `expense@axonaut.com`** (ingestion officielle
+>    Axonaut : réception, OCR, création d'une dépense « à traiter » avec justificatif).
+>    Le rattachement du justificatif par API n'a plus à être résolu en V1.
+> 3. **Une seule méthode d'import à la fois** : jamais « Create an Expense » ET envoi
+>    email pour une même facture. Le Plan B (module Create an Expense) est documenté
+>    dans `architecture.md` §10 et `make-scenario.md` §10, avec sa limitation
+>    (justificatif non confirmé par API — à ne pas présenter comme fonctionnel sans
+>    test réel).
 
 ## 0. Méthode et honnêteté des sources
 
@@ -129,9 +144,17 @@ le header `userApiKey` (vérifié §1) remplace n'importe quel module du connect
 
 ---
 
-## 5. Points bloquants à confirmer AVANT la Phase 3
+## 5. Points bloquants — RÉSOLUS (2026-07-24)
 
-### 5.1 — Création d'une dépense (`POST /expenses`) — **bloquant n°1**
+### 5.1 — Création d'une dépense — ✅ résolu
+
+**Résolution :** la documentation officielle du connecteur Make Axonaut confirme que
+l'intégration permet de créer des dépenses. « Axonaut — Create an Expense » est donc
+considéré comme disponible dans Make — **mais réservé au Plan B** ; les noms exacts
+des champs seront relevés directement dans le module Make connecté au compte Axonaut
+avant toute utilisation. Contexte d'origine du doute (conservé pour traçabilité) :
+
+#### Analyse initiale (historique)
 
 - La fiche Make annonce « Creates a new expense » ;
 - mais **aucun client open-source n'appelle `POST /expenses`** (le nœud n8n « couverture
@@ -149,25 +172,28 @@ Axonaut** (Axonaut sait recevoir des factures fournisseurs par email avec OCR in
 à vérifier dans les paramètres du compte) — mais on perdrait le contrôle amont ; ce
 serait un changement d'architecture à valider ensemble.
 
-### 5.2 — Rattachement du justificatif à la dépense — **bloquant n°2**
+### 5.2 — Rattachement du justificatif — ✅ résolu par changement de méthode
 
-Aucun endpoint « attacher un fichier à une dépense » n'a été trouvé. Conformément au
-cahier des charges, la limitation est documentée et la solution de repli actée :
-- lien Drive du justificatif dans la **description de la dépense** (toujours fait) ;
-- document ajouté à la **fiche société** (`POST /companies/{id}/documents`) si l'upload
-  de fichier y est réellement supporté (le format exact du corps — multipart ou base64 —
-  n'est pas prouvé par les sources) ;
-- jamais de simulation de réussite, jamais de suppression du fichier Drive.
+**Résolution :** on n'utilise plus aucun endpoint API non confirmé pour le
+justificatif. Axonaut permet officiellement d'envoyer factures et justificatifs à
+**`expense@axonaut.com`** : Axonaut réceptionne le document, lance son OCR et crée
+une dépense dans « Dépenses à traiter » **avec le justificatif joint**. C'est la
+méthode retenue pour la V1 (architecture mise à jour dans `architecture.md`).
 
-À confirmer dans la doc officielle : si `POST /expenses` existe, accepte-t-il un champ
-fichier/pièce jointe à la création ?
+Point de vigilance à valider en test T0 (`make-scenario.md` §8) : l'adresse Gmail
+expéditrice doit être reconnue par Axonaut pour que l'ingestion aboutisse.
 
-### 5.3 — Recherche fournisseur par SIRET
+**Pour le Plan B uniquement** (« Create an Expense ») : le rattachement du fichier à
+la dépense via l'API reste **non confirmé** et ne doit pas être présenté comme
+fonctionnel sans test réel — repli : lien Drive dans la description de la dépense ;
+jamais de simulation de réussite, jamais de suppression du fichier Drive.
 
-Non prouvée côté API (§1). Prévoir dès l'architecture le filtrage côté scénario
-(liste paginée + filtre sur le champ SIRET/TVA du fournisseur), et vérifier dans la doc
-officielle les query params réels de `GET /suppliers` et le nom exact du champ SIRET
-dans la réponse (`siret` ? `company_number` ? `thirdparty_code` ?).
+### 5.3 — Recherche fournisseur par SIRET — sans objet en V1
+
+En V1 (ingestion email), c'est Axonaut qui rattache le fournisseur lors de l'OCR.
+Reste pertinent **pour le Plan B uniquement** : recherche non prouvée par SIRET côté
+API (§1) — prévoir liste paginée + filtre côté scénario, et vérifier les query params
+réels de `GET /suppliers` et le nom exact du champ SIRET dans la réponse.
 
 ### 5.4 — Divers à confirmer (non bloquants)
 
@@ -185,16 +211,21 @@ dans la réponse (`siret` ? `company_number` ? `thirdparty_code` ?).
 1. Pas de paiement, pas de validation, pas de suppression — par conception.
 2. Archives ZIP et pièces jointes < 15 Ko ignorées.
 3. Factures non-EUR, avoirs, proformas, tickets → Route C (anomalies), traitement manuel.
-4. Recherche fournisseur potentiellement paginée + filtrée côté client (coût en
-   opérations Make si le nombre de fournisseurs est grand).
-5. Le justificatif pourrait n'être rattachable qu'à la société, pas à la dépense (§5.2).
+4. V1 : le rattachement du fournisseur et la saisie fine des montants dans Axonaut
+   dépendent de l'OCR Axonaut (dépense créée « à traiter », corrigeable à la
+   validation humaine). Le pré-contrôle IA en amont bloque les documents douteux.
+5. Plan B uniquement : recherche fournisseur paginée + filtrée côté client, et
+   justificatif non rattachable à la dépense par API sans test réel probant (§5.2).
 6. Une seule société (HD ECOMMERCE) ; multi-sociétés préparé mais non construit.
+7. Une seule méthode d'import Axonaut à la fois — jamais email + API pour une même
+   facture (règle anti-doublons structurelle).
 
 ## 7. Prochaines actions
 
-1. **Vous** : confirmer §5.1 et §5.2 (doc Axonaut authentifiée + interface Make — je
-   fournis la check-list exacte ci-dessus). Créer les libellés Gmail et l'arborescence Drive.
-2. **Moi (Phase 2)** : architecture définitive gelée une fois §5.1/§5.2 tranchés,
-   puis liste ordonnée des modules, filtres et expressions Make, payloads Axonaut
-   d'exemple, structure Data Store/journal prête à importer.
-3. **Phase 3** : prototype sur une facture PDF réelle avec un fournisseur existant.
+1. ✅ §5.1 et §5.2 confirmés par HD ECOMMERCE — architecture V1 = ingestion
+   `expense@axonaut.com`, Plan B = « Create an Expense » (documenté, non construit).
+2. ✅ Phase 2 livrée : `make-scenario.md` (modules ordonnés, filtres, expressions,
+   Data Store, prompt IA, procédure de test, check-list de configuration).
+3. **Suivant — Phase 3 (prototype)** : exécuter T0 (validation de l'ingestion
+   `expense@axonaut.com` depuis la boîte Gmail dédiée), créer libellés/dossiers/
+   Data Store/journal, construire le scénario dans Make, dérouler T1 à T8.

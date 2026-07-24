@@ -11,28 +11,37 @@ chaque action. L'orchestration est assurée par **Make**.
 > Toute dépense créée porte la mention « Créée automatiquement — validation requise »
 > et reste soumise à validation humaine.
 
+## Décision d'architecture V1 (2026-07-24)
+
+L'import dans Axonaut se fait par **envoi de la facture validée à
+`expense@axonaut.com`** — l'ingestion officielle Axonaut réceptionne le document,
+lance son OCR et crée une dépense dans « Dépenses à traiter » avec le justificatif
+joint. Le module Make « Axonaut — Create an Expense » (confirmé disponible) est
+réservé au **Plan B** documenté — jamais utilisé en même temps que l'envoi email,
+pour ne jamais créer de doublon dans Axonaut.
+
 ## Statut du projet
 
 | Phase | Contenu | Statut |
 |---|---|---|
-| Phase 1 | Audit des intégrations Make / Axonaut, structure du projet | ✅ Terminée — voir [`docs/audit-make-axonaut.md`](docs/audit-make-axonaut.md) |
-| Phase 2 | Architecture définitive | 🔜 En attente de levée des points bloquants de l'audit |
-| Phase 3 | Prototype (1 boîte Gmail, 1 société, 1 facture) | ⏳ |
-| Phase 4 | Tests (10 scénarios) | ⏳ |
+| Phase 1 | Audit des intégrations Make / Axonaut, structure du projet | ✅ Terminée — [`docs/audit-make-axonaut.md`](docs/audit-make-axonaut.md) |
+| Phase 2 | Architecture définitive + spécification du scénario Make | ✅ Terminée — [`docs/architecture.md`](docs/architecture.md), [`docs/make-scenario.md`](docs/make-scenario.md) |
+| Phase 3 | Prototype (T0 puis construction du scénario dans Make) | 🔜 |
+| Phase 4 | Tests (T1 → T8) | ⏳ |
 | Phase 5 | Mise en production | ⏳ |
 
 ## Ce que fait l'agent
 
-1. Surveille le libellé Gmail `FACTURES/À TRAITER` (emails avec pièce jointe).
+1. Surveille le libellé Gmail `FACTURES/A-TRAITER` (emails avec pièce jointe).
 2. Filtre les pièces jointes : `application/pdf`, `image/jpeg`, `image/png`, ≥ 15 Ko.
 3. Archive immédiatement l'original dans Drive (`ARCHIVES ORIGINALES/`) — jamais modifié, jamais supprimé.
 4. Extrait les données comptables par IA (JSON strict, score de confiance).
 5. Contrôle la cohérence HT / TVA / TTC (tolérance 0,02 €), la société destinataire, le SIRET, les dates.
-6. Détecte les doublons via une clé normalisée + hash SHA-256 du fichier (Data Store).
-7. Route la facture : **A — Valide** (création dépense Axonaut), **B — Doublon** (alerte), **C — Anomalie** (alerte).
-8. Recherche le fournisseur dans Axonaut ; le crée uniquement si les données sont fiables (SIRET valide, confiance ≥ 0,98).
-9. Classe le fichier dans Drive (`TRAITÉES/`, `DOUBLONS/`, `ANOMALIES/`) et met à jour les libellés Gmail.
-10. Journalise chaque événement (journal d'audit complet).
+6. Détecte les doublons via une clé normalisée (fournisseur + n° facture + TTC) + hash SHA-256 du fichier (Data Store) — un même document ne peut jamais être envoyé deux fois.
+7. Route la facture : **A — Valide** (envoi à `expense@axonaut.com`, statut « envoyée à Axonaut — validation requise »), **B — Doublon** (aucun envoi, alerte), **C — Anomalie** (aucun envoi, alerte).
+8. Classe le fichier dans Drive (`ENVOYÉES AXONAUT/`, `DOUBLONS/`, `ANOMALIES/`) et met à jour les libellés Gmail (`FACTURES/ENVOYEES-AXONAUT`, `FACTURES/DOUBLONS`, `FACTURES/ANOMALIES`).
+9. Journalise chaque événement (journal d'audit complet).
+10. Laisse Axonaut créer la dépense « à traiter » via son OCR — la validation finale reste humaine, dans Axonaut.
 
 ## Ce que l'agent ne fait jamais
 
@@ -45,18 +54,23 @@ chaque action. L'orchestration est assurée par **Make**.
 ## Architecture (résumé)
 
 ```
-Gmail (Watch Emails, label FACTURES/À TRAITER)
+Gmail (Watch Emails, label FACTURES/A-TRAITER)
   → Iterator pièces jointes → Filtre (PDF/JPG/PNG, ≥15 Ko)
-  → Archivage original Google Drive
+  → Archivage original Google Drive (ARCHIVES ORIGINALES)
   → Analyse IA (Claude API) → Parse JSON → Normalisation
   → Contrôles de cohérence → Détection doublons (Data Store)
   → Router Make
-      ├─ Route A (valide)   : Fournisseur Axonaut (recherche/création) → Dépense → Justificatif → Journal → Drive TRAITÉES → Libellés Gmail
-      ├─ Route B (doublon)  : Drive DOUBLONS → Libellés → Alerte → Journal
-      └─ Route C (anomalie) : Drive ANOMALIES → Libellés → Alerte → Journal
+      ├─ Route A (valide)   : Data Store (anti-second-envoi) → email vers expense@axonaut.com
+      │                       → Journal → Drive ENVOYÉES AXONAUT → Libellés Gmail
+      ├─ Route B (doublon)  : AUCUN envoi → Journal → Alerte → Libellés
+      └─ Route C (anomalie) : AUCUN envoi → Drive ANOMALIES → Journal → Alerte → Libellés
 ```
 
-Détail complet : [`docs/architecture.md`](docs/architecture.md).
+Détail : [`docs/architecture.md`](docs/architecture.md) ·
+Spécification opérationnelle complète (modules, filtres, expressions, tests) :
+[`docs/make-scenario.md`](docs/make-scenario.md) ·
+Plan B (« Create an Expense ») : `architecture.md` §10 — justificatif par API non
+confirmé, à ne pas présenter comme fonctionnel sans test réel.
 
 ## Structure du dépôt
 
@@ -67,9 +81,11 @@ agent-factures-axonaut/
 ├── .env.example          # Modèle de variables d'environnement (jamais de vraies clés)
 ├── .gitignore
 ├── docs/
-│   ├── architecture.md           # Architecture cible détaillée
+│   ├── architecture.md           # Architecture cible V1 (ingestion expense@axonaut.com) + Plan B
+│   ├── make-scenario.md          # Phase 2 : modules ordonnés, filtres, expressions, tests, config
 │   └── audit-make-axonaut.md     # Audit Phase 1 : modules Make & API Axonaut vérifiés
-├── examples/             # Exemples de payloads (JSON extraction, dépense Axonaut) — Phase 2+
+├── examples/
+│   └── invoice-output.json       # Exemple de sortie JSON de l'extraction IA
 ├── src/                  # Code complémentaire (contrôles, normalisation, hash) — Phase 2+
 │   ├── config/  api/{axonaut,ai,google}/  extraction/  validation/
 │   ├── duplicates/  logging/  security/  utils/

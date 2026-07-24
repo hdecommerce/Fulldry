@@ -1,111 +1,109 @@
-# Architecture cible — Agent IA Factures Fournisseurs
+# Architecture cible V1 — Agent IA Factures Fournisseurs
 
-> **Statut : projet d'architecture (Phase 1/2).** Les noms exacts de certains modules
-> Make et deux capacités Axonaut (création de dépense, rattachement du justificatif)
-> doivent être confirmés dans les comptes réels — voir `audit-make-axonaut.md`.
-> Rien dans ce document ne doit être construit avant cette confirmation.
+> **Décision d'architecture (2026-07-24, validée par HD ECOMMERCE) :**
+> en version 1, l'import dans Axonaut se fait par **envoi de la facture à
+> `expense@axonaut.com`** (ingestion officielle Axonaut : réception, OCR, création
+> d'une dépense dans « Dépenses à traiter » avec le justificatif joint).
+> Le module Make « Axonaut — Create an Expense » existe et est réservé au **Plan B**
+> (§10). **Une seule méthode d'import est utilisée — jamais les deux — pour ne
+> jamais créer de doublon dans Axonaut.**
 
 ## 1. Vue d'ensemble
 
-Un scénario Make principal orchestre le flux. Le code (Python ou Node.js) n'intervient
-que pour les traitements que Make fait mal : normalisation fine, validations complexes,
-hash SHA-256 de fichiers, appels API absents du connecteur Axonaut.
+Make orchestre tout le flux amont : détection, archivage, extraction IA, contrôles,
+déduplication. Axonaut réalise l'OCR final et crée la dépense « à traiter ».
+La validation reste **humaine, dans Axonaut**. Aucun paiement n'est jamais déclenché.
 
 ```
-┌─────────┐   ┌──────────┐   ┌────────┐   ┌───────────────┐   ┌──────────┐
-│  Gmail   │→→│ Iterator  │→→│ Filtre │→→│ Drive ARCHIVES │→→│ IA (OCR)  │
-│ Watch    │  │ pièces    │  │ type + │  │ ORIGINALES     │  │ Claude    │
-│ Emails   │  │ jointes   │  │ taille │  │ (original)     │  │ → JSON    │
-└─────────┘   └──────────┘   └────────┘   └───────────────┘   └──────────┘
-                                                                    ↓
-┌──────────────┐   ┌────────────────┐   ┌───────────────┐   ┌────────────┐
-│ Router Make   │←←│ Data Store      │←←│ Contrôles de   │←←│ Parse JSON  │
-│ A / B / C     │  │ (doublons)      │  │ cohérence      │  │ + variables │
-└──────────────┘   └────────────────┘   └───────────────┘   └────────────┘
-   ↓ Route A (valide)                ↓ Route B (doublon)      ↓ Route C (anomalie)
-   Axonaut : recherche fournisseur   Drive → DOUBLONS         Drive → ANOMALIES
-   → création si absent (règles)     Libellés Gmail           Libellés Gmail
-   → création dépense (non payée)    Alerte email             Alerte email
-   → justificatif (voir §8)          Journal                  Journal
-   → Journal → Drive TRAITÉES
-   → Libellés Gmail
+Gmail — Watch Emails (label FACTURES/A-TRAITER, has:attachment)
+  → Iterator pièces jointes
+  → Filtre PDF/JPG/PNG, ≥ 15 Ko
+  → Archivage de l'original dans Drive (ARCHIVES ORIGINALES) — jamais modifié
+  → Analyse IA (Claude) → Parse JSON
+  → Normalisation + contrôles de cohérence
+  → Contrôle des doublons (Data Store)
+  → Router
+      ├─ Route A — VALIDE
+      │    → email avec la pièce jointe originale vers expense@axonaut.com
+      │    → enregistrement Data Store (hash, n° facture, fournisseur, TTC, ID Gmail)
+      │    → statut « envoyée à Axonaut — validation requise »
+      │    → journal → copie Drive « ENVOYÉES AXONAUT » (nom normalisé)
+      │    → libellé Gmail FACTURES/ENVOYEES-AXONAUT, retrait A-TRAITER
+      ├─ Route B — DOUBLON
+      │    → AUCUN envoi à Axonaut
+      │    → libellé FACTURES/DOUBLONS, retrait A-TRAITER
+      │    → journal + alerte (détails du doublon)
+      └─ Route C — ANOMALIE (route par défaut)
+           → AUCUN envoi à Axonaut
+           → copie Drive « ANOMALIES »
+           → libellé FACTURES/ANOMALIES, retrait A-TRAITER
+           → journal + alerte détaillée
 ```
 
-## 2. Déclencheur Gmail
+Le détail opérationnel (modules ordonnés, filtres, expressions, tests, configuration)
+est dans **[`make-scenario.md`](make-scenario.md)**.
 
-- Module : **Gmail — Watch Emails** (avec récupération des pièces jointes activée).
-- Requête de recherche : `label:FACTURES-A-TRAITER has:attachment`.
+## 2. Rôle de chaque brique
 
-> ⚠️ Recommandation : nommer les libellés **sans accents ni espaces**
-> (`FACTURES/A-TRAITER`, `FACTURES/TRAITEES`, `FACTURES/DOUBLONS`, `FACTURES/ANOMALIES`).
-> Les recherches Gmail sur des libellés accentués avec espaces sont fragiles dans les
-> requêtes `label:` (Gmail remplace espaces par `-` en interne). L'affichage humain
-> peut garder les accents ; la requête API non.
+| Brique | Rôle | Ne fait jamais |
+|---|---|---|
+| Gmail | File d'entrée (libellés), envoi vers Axonaut, alertes | Suppression d'emails |
+| Google Drive | Archivage immuable des originaux + classement des copies | Suppression de fichiers |
+| Claude API | Extraction JSON + score de confiance (pré-contrôle qualité **avant** envoi à Axonaut) | Décision finale |
+| Make Data Store | Base anti-doublons / anti-second-envoi | — |
+| Google Sheets | Journal d'audit V1 | — |
+| Axonaut (`expense@axonaut.com`) | OCR officiel + création de la dépense « à traiter » avec justificatif | Paiement, validation |
+| Humain (dans Axonaut) | Validation finale de chaque dépense | — |
 
-Libellés à créer :
+Intérêt de garder l'analyse IA en amont alors qu'Axonaut refait un OCR : c'est elle
+qui permet le **tri qualité** (anomalies bloquées avant Axonaut), la **déduplication
+fiable** (clé métier + hash) et le **journal d'audit** — l'OCR Axonaut ne fournit rien
+de tout cela côté Make.
+
+## 3. Déclencheur et libellés Gmail
+
+Requête du trigger : `label:FACTURES-A-TRAITER has:attachment`.
 
 | Libellé | Rôle |
 |---|---|
 | `FACTURES/A-TRAITER` | File d'attente d'entrée |
-| `FACTURES/TRAITEES` | Facture traitée avec succès (Route A) |
-| `FACTURES/DOUBLONS` | Doublon détecté (Route B) |
-| `FACTURES/ANOMALIES` | Anomalie ou erreur technique (Route C) |
+| `FACTURES/ENVOYEES-AXONAUT` | Facture transmise à Axonaut — validation requise (Route A) |
+| `FACTURES/DOUBLONS` | Doublon détecté, non transmise (Route B) |
+| `FACTURES/ANOMALIES` | Anomalie ou erreur technique, non transmise (Route C) |
 
-## 3. Itération et filtrage des pièces jointes
+> Libellés **sans accents ni espaces** dans les identifiants (les requêtes `label:`
+> sur libellés accentués/espacés sont fragiles). L'affichage humain reste libre.
 
-- **Flow Control — Iterator** sur le tableau des pièces jointes de l'email.
-- Filtre Make (entre Iterator et suite) :
-  - `mimeType` ∈ {`application/pdf`, `image/jpeg`, `image/png`} ;
-  - taille ≥ 15 360 octets (exclut signatures et logos) ;
-  - nom de fichier ne se termine pas par `.exe`, `.zip`, `.rar`, `.7z` (V1 : archives ignorées).
+Filtre pièces jointes : `application/pdf`, `image/jpeg`, `image/png` ; taille ≥ 15 360
+octets ; exclusion `.exe`, `.zip`, `.rar`, `.7z` (V1), images de signature et logos
+(exclus de fait par le seuil de taille).
 
-## 4. Archivage immédiat de l'original (avant toute analyse)
-
-- **Google Drive — Upload a File** vers `FACTURES FOURNISSEURS/HD ECOMMERCE/ARCHIVES ORIGINALES/`.
-- Le fichier original n'est **jamais modifié ni supprimé**, quel que soit le résultat.
-
-Arborescence Drive :
+## 4. Arborescence Google Drive
 
 ```
 FACTURES FOURNISSEURS/
 └── HD ECOMMERCE/
-    ├── À CONTROLER/           (option validation humaine)
-    ├── TRAITÉES/
-    ├── DOUBLONS/
-    ├── ANOMALIES/
-    └── ARCHIVES ORIGINALES/   (copie brute systématique)
+    ├── ENVOYÉES AXONAUT/      (copies renommées des factures transmises — Route A)
+    ├── DOUBLONS/              (copies des doublons — Route B, optionnel)
+    ├── ANOMALIES/             (copies des anomalies — Route C)
+    ├── À CONTROLER/           (réservé : option validation humaine renforcée)
+    └── ARCHIVES ORIGINALES/   (copie brute systématique, AVANT toute analyse)
 ```
 
-Nom normalisé après traitement (copie de travail, pas l'original) :
-`AAAA-MM-JJ_FOURNISSEUR_NUMERO-FACTURE_MONTANT-TTC_EUR.pdf`
-Exemple : `2026-07-20_GOOGLE_FR-4587_1055.00_EUR.pdf`
-Nettoyage : suppression de `/ \ : * ? " < > |`, accents translittérés, espaces → `-`.
+- L'original est archivé **avant** l'analyse IA et n'est **jamais** modifié, déplacé
+  ni supprimé — y compris en cas d'erreur.
+- Copie de classement renommée : `AAAA-MM-JJ_FOURNISSEUR_NUMERO-FACTURE_MONTANT-TTC_EUR.pdf`
+  (ex. `2026-07-20_GOOGLE_FR-4587_1055.00_EUR.pdf`). Nettoyage : caractères
+  `/ \ : * ? " < > |` supprimés, accents translittérés, espaces → `-`.
 
-## 5. Analyse IA
+## 5. Analyse IA et schéma JSON
 
-- Appel de l'API Anthropic (Claude) avec le document en entrée
-  (les PDF sont acceptés nativement par l'API Messages via un bloc `document` en base64 ;
-  les images via un bloc `image`).
-- Si le module Make « Anthropic Claude » ne permet pas de joindre un PDF, utiliser
-  **HTTP — Make a Request** vers `https://api.anthropic.com/v1/messages` (voir audit §4).
-- Sortie attendue : **exclusivement** le JSON du §6. `response_format`/consigne stricte +
-  **JSON — Parse JSON** avec gestionnaire d'erreur (JSON invalide → Route C).
-
-### Prompt système (base)
-
-> Tu es un moteur d'extraction documentaire spécialisé dans les factures fournisseurs
-> françaises. Analyse le document fourni. Retourne exclusivement un JSON valide conforme
-> au schéma demandé. Ne retourne aucun commentaire, aucune balise Markdown et aucun texte
-> en dehors du JSON. N'invente jamais une donnée absente. Utilise null lorsqu'une donnée
-> n'est pas disponible. Vérifie mathématiquement les montants. Identifie les éventuelles
-> anomalies. Le score confidence doit refléter la qualité réelle de l'extraction.
-
-Règles additionnelles : ne pas deviner le SIRET ; ne pas confondre client/fournisseur,
-date de facture/échéance, HT/TTC ; conserver les décimales ; dates ISO `AAAA-MM-JJ` ;
-conserver la devise détectée ; signaler toute incohérence et tout multi-taux de TVA ;
-ne pas classer un devis ou une proforma comme facture.
-
-## 6. Schéma JSON d'extraction
+- API Anthropic Messages : PDF natifs (bloc `document`, base64) et images (bloc `image`).
+  Appel via le module Make Anthropic Claude s'il accepte les fichiers, sinon
+  **HTTP — Make a Request** (payload exact dans `make-scenario.md` §6).
+- Sortie : exclusivement le JSON ci-dessous. Parse JSON avec gestionnaire d'erreur
+  (JSON invalide → Route C). Jamais de confiance aveugle : tous les montants sont
+  re-vérifiés arithmétiquement par le scénario.
 
 ```json
 {
@@ -134,132 +132,102 @@ ne pas classer un devis ou une proforma comme facture.
 }
 ```
 
-`document_type` ∈ {`invoice`, `credit_note`, `receipt`, `proforma`, `delivery_note`, `unknown`}.
-**V1 : seul `invoice` part en Route A ; tout le reste part en Route C.**
+`document_type` ∈ {`invoice`, `credit_note`, `receipt`, `proforma`, `delivery_note`,
+`unknown`}. **V1 : seul `invoice` peut partir en Route A ; tout le reste → Route C.**
+Le champ `iban` est **masqué** dans le journal, les alertes et les logs (`FRxx••••`).
 
-> Sécurité : le champ `iban` est extrait pour contrôle interne éventuel mais **masqué**
-> dans le journal, les alertes et les logs (affichage `FRxx••••••••`).
+## 6. Contrôles de cohérence (conditions Route A)
 
-## 7. Contrôles de cohérence (avant routage)
+Toutes les conditions doivent être vraies — sinon Route C (ou B si doublon) :
 
-Facture **valide** (Route A) uniquement si TOUTES les conditions sont vraies :
+1. `confidence >= 0.95` ; 2. `company == "HD ECOMMERCE"` ; 3. `invoice_number` non vide ;
+4. `supplier_name` non vide ; 5. `invoice_date` valide et non aberrante ;
+6. `amount_including_tax > 0` ; 7. `currency == "EUR"` ; 8. `document_type == "invoice"` ;
+9. `abs((HT + TVA) − TTC) <= 0.02` ; 10. multi-taux : Σ bases = HT ± 0,02 € et
+Σ TVA = TVA ± 0,02 € ; 11. SIRET (si présent) = 14 chiffres ; 12. n° TVA FR (si présent)
+structurellement cohérent ; 13. `due_date >= invoice_date` (si présente) ;
+14. TTC ≤ plafond paramétrable (défaut 50 000 €).
 
-| # | Contrôle |
-|---|---|
-| 1 | `confidence >= 0.95` |
-| 2 | `company == "HD ECOMMERCE"` |
-| 3 | `invoice_number` non vide |
-| 4 | `supplier_name` non vide |
-| 5 | `invoice_date` valide (et non aberrante dans le futur) |
-| 6 | `amount_including_tax > 0` |
-| 7 | `currency == "EUR"` |
-| 8 | `document_type == "invoice"` |
-| 9 | `abs((HT + TVA) − TTC) <= 0.02` |
-| 10 | Multi-taux : Σ bases HT = HT total ± 0,02 € et Σ TVA = TVA total ± 0,02 € |
-| 11 | SIRET (si présent) : 14 chiffres |
-| 12 | N° TVA FR (si présent) : structure `FR` + 2 caractères + 9 chiffres SIREN |
-| 13 | `due_date >= invoice_date` (si présente) |
-| 14 | Montant TTC « raisonnable » (plafond paramétrable, ex. ≤ 50 000 €) |
+## 7. Anti-doublons et anti-second-envoi (Data Store)
 
-Chaque échec ajoute une entrée dans `anomalies[]` ; toute anomalie ⇒ Route C.
-Doublon (voir §9) ⇒ Route B, prioritaire sur A.
+Clé unique normalisée (minuscules, sans espaces/accents/spéciaux, TTC à 2 décimales) :
+- avec SIRET : `siret-invoicenumber-ttc` (ex. `93776694700000-fa2026458-1055.00`) ;
+- sans SIRET : `suppliernamenorm-invoicenumber-ttc`.
 
-## 8. Route A — Axonaut
+Contrôle secondaire : **hash SHA-256 du fichier**. Jamais de déduplication par nom de
+fichier ou ID Gmail seuls.
 
-1. **Recherche fournisseur** : par SIRET d'abord (si présent), sinon par nom normalisé.
-2. **Fournisseur existant** → utiliser son identifiant. Jamais deux fournisseurs de même SIRET.
-3. **Fournisseur absent** → création uniquement si : `supplier_name` présent, SIRET valide,
-   `confidence >= 0.98`, adresse ou pays disponible. Sinon Route C (validation humaine).
-4. **Création de la dépense** : HT, TVA, TTC, n° de facture, date, échéance, statut **non payé**,
-   description avec la mention « Créée automatiquement — validation requise » + lien Drive.
-5. **Justificatif** : ⚠️ le rattachement direct d'un fichier à une dépense n'est **pas
-   confirmé** dans l'API Axonaut (voir audit §3). Solution de repli actée : lien Drive
-   dans la description + document ajouté à la fiche société Axonaut
-   (`POST /companies/{id}/documents`) si l'upload de fichier y est réellement supporté.
-   Ne jamais simuler une réussite.
-6. Journal (`expense_created`), déplacement Drive → `TRAITÉES/`, libellés Gmail.
+**Séquence idempotente de la Route A** (empêche tout second envoi, même en cas de
+plantage à mi-parcours ou de rejeu du scénario) :
 
-## 9. Détection des doublons (Data Store Make)
+1. `Data Store — Add/Replace` : enregistrement `status = "sending"` **avant** l'envoi ;
+2. envoi de l'email à `expense@axonaut.com` ;
+3. `Data Store — Add/Replace` : `status = "sent_to_axonaut"` + horodatage.
 
-Clé primaire normalisée :
-- avec SIRET : `siret + "-" + invoice_number_normalisé + "-" + ttc(2 décimales)` ;
-- sans SIRET : `supplier_name_normalisé + "-" + invoice_number_normalisé + "-" + ttc`.
+Le contrôle d'existence (avant Router) route en B tout enregistrement existant, quel
+que soit son statut. Un enregistrement bloqué en `sending` (plantage entre 1 et 2)
+est signalé en alerte pour arbitrage humain — jamais renvoyé automatiquement.
 
-Normalisation : minuscules, sans espaces, sans accents, sans caractères spéciaux.
-Exemple : `93776694700000-fa2026-458-1055.00`.
+Champs stockés : clé, hash SHA-256, fournisseur, SIRET, n° facture, date facture, TTC,
+ID message Gmail, ID thread Gmail, URL Drive originale, URL Drive copie, date d'envoi
+à Axonaut, statut, version du scénario.
 
-Contrôle secondaire : hash **SHA-256 du fichier** (même fichier renvoyé deux fois).
-Ne jamais se fier au nom de fichier ni à l'ID du message Gmail seul.
+## 8. Journal d'audit
 
-Enregistrement Data Store (`invoices_processed`) :
-
-| Champ | Type |
-|---|---|
-| `key` (clé unique normalisée) | text (clé du record) |
-| `file_hash_sha256` | text |
-| `supplier_name` / `supplier_siret` | text |
-| `invoice_number` / `invoice_date` | text / date |
-| `amount_including_tax` | number |
-| `axonaut_supplier_id` / `axonaut_expense_id` | text |
-| `gmail_message_id` / `gmail_thread_id` | text |
-| `drive_original_url` / `drive_processed_url` | text |
-| `processed_at` | date |
-| `status` | text |
-
-L'écriture dans le Data Store se fait **après** la création réussie de la dépense
-(sinon un échec Axonaut bloquerait le retraitement) ; l'existence est vérifiée **avant**
-le Router (module *Data Store — Check the existence of a record*).
-
-## 10. Journal d'audit
-
-Support V1 : Google Sheets (simple, lisible) ; migration Supabase/PostgreSQL possible.
-Colonnes : `event_id`, `timestamp`, `gmail_message_id`, `gmail_thread_id`,
-`attachment_name`, `attachment_hash`, `supplier_name`, `supplier_siret`,
-`invoice_number`, `invoice_date`, `amount_excluding_tax`, `vat_amount`,
-`amount_including_tax`, `confidence`, `status`, `anomaly_reason`,
-`axonaut_supplier_id`, `axonaut_expense_id`, `drive_original_url`,
+Support V1 : Google Sheets. Colonnes : `event_id`, `timestamp`, `gmail_message_id`,
+`gmail_thread_id`, `attachment_name`, `attachment_hash`, `supplier_name`,
+`supplier_siret`, `invoice_number`, `invoice_date`, `amount_excluding_tax`,
+`vat_amount`, `amount_including_tax`, `confidence`, `status`, `anomaly_reason`,
+`axonaut_supplier_id` (Plan B), `axonaut_expense_id` (Plan B), `drive_original_url`,
 `drive_processed_url`, `processing_duration`, `ai_model`, `scenario_version`.
 
-Statuts : `received`, `extracted`, `validated`, `duplicate`, `anomaly`,
-`supplier_created`, `expense_created`, `completed`, `failed`.
+Statuts V1 : `received`, `extracted`, `validated`, `sent_to_axonaut`, `duplicate`,
+`anomaly`, `completed`, `failed` (les statuts `supplier_created` / `expense_created`
+sont réservés au Plan B).
 
-## 11. Gestion des erreurs
+## 9. Gestion des erreurs
 
-Chaque module critique porte un gestionnaire d'erreur Make (directives *Break* avec
-retry, *Resume*, *Ignore* selon le cas) :
+- **Techniques** (Gmail/Drive/IA indisponibles, timeout) : gestionnaire *Break*,
+  3 tentatives, délai progressif ; au-delà → Route C + alerte. L'email **conserve**
+  `A-TRAITER`, l'original reste archivé, rien n'est envoyé à Axonaut.
+- **Fonctionnelles** (JSON invalide, incohérence, doublon) : pas de retry — B ou C.
+- Aucune erreur silencieuse : ligne `failed`/`anomaly` au journal + alerte email
+  détaillée (données sensibles masquées).
+- Idempotence garantie par la séquence §7 : un rejeu ne renvoie jamais une facture
+  déjà transmise.
 
-- Erreurs **techniques** (Gmail/Drive/IA/Axonaut indisponibles, timeout) :
-  retry ×3 avec délai progressif (Break), puis Route C + alerte. L'email **garde** son
-  libellé `A-TRAITER` (pas de perte), l'original reste archivé.
-- Erreurs **fonctionnelles** (JSON invalide, doublon, données incohérentes) :
-  pas de retry — routage direct B ou C.
-- Aucune erreur silencieuse : tout échec écrit une ligne `failed` au journal et
-  déclenche une alerte email détaillée (sans données sensibles).
-- Idempotence : le Data Store empêche la création d'un doublon Axonaut lors d'un rejeu.
+## 10. Plan B documenté — « Axonaut — Create an Expense »
 
-## 12. Sécurité
+À activer **uniquement** si l'import par `expense@axonaut.com` ne traite pas
+correctement les factures fournisseurs (constaté en Phase 4). Bascule = décision
+explicite, jamais un cumul :
 
-- Clés dans les **connexions Make** / variables d'environnement / coffre-fort — jamais en clair
-  dans les modules, jamais dans Git (`.env` ignoré, `.env.example` vide).
-- Masquage systématique : IBAN, clés API, tokens, données bancaires (logs, journal, alertes).
-- Moindre privilège : Gmail (`gmail.modify` : lecture + libellés, pas de suppression),
-  Drive limité au dossier `FACTURES FOURNISSEURS/`, Axonaut par clé API dédiée.
-- RGPD : données conservées dans l'UE quand l'option existe ; factures réelles jamais
-  versionnées dans Git ; journal limité aux données comptables nécessaires.
+- Route A remplacée par : recherche fournisseur Axonaut (SIRET puis nom) → création
+  du fournisseur si absent et données fiables (SIRET valide, `confidence >= 0.98`,
+  adresse/pays) → **Axonaut — Create an Expense** (non payée, mention « Créée
+  automatiquement — validation requise ») → journal avec `axonaut_expense_id`.
+- Les noms exacts des champs du module seront relevés **dans le module Make connecté
+  au compte** — ne pas les inventer ni les figer à l'avance.
+- ⚠️ **Le rattachement du justificatif à la dépense via l'API reste NON confirmé et
+  ne doit pas être présenté comme fonctionnel sans test réel.** Repli obligatoire :
+  lien Drive du justificatif dans la description de la dépense ; jamais de simulation
+  de réussite ; jamais de suppression du fichier Drive.
+- Interdits identiques : jamais `POST /expenses/payments`, jamais de statut « payé ».
 
-## 13. Extension multi-sociétés (préparée, non construite)
+## 11. Sécurité et RGPD
 
-L'architecture isole la société dans : le champ `company` du JSON, un sous-dossier Drive
-par société, un préfixe de clé Data Store, et une table de configuration
-(société → dossier Drive, connexion Axonaut, libellés Gmail). Ajouter **BUSINESS** ou
-**MIX TERROIR** = ajouter une ligne de configuration + une branche de Router — sans
-refonte du scénario. V1 : toute facture dont `company ≠ HD ECOMMERCE` part en Route C
-(« société inconnue »).
+- Clés uniquement dans les connexions Make / variables d'environnement / coffre-fort ;
+  `.env` ignoré par Git, `.env.example` vide.
+- Masquage : IBAN, clés API, tokens, données bancaires — dans les logs, le journal et
+  les alertes.
+- Moindre privilège : Gmail (lecture + libellés + envoi), Drive limité au dossier
+  `FACTURES FOURNISSEURS/`, clé Axonaut réservée au Plan B.
+- Factures réelles jamais versionnées dans Git ; journal limité aux données
+  comptables nécessaires.
 
-## 14. Validation humaine (V1)
+## 12. Extension multi-sociétés (préparée, non construite)
 
-- Dépenses créées non payées, mention « validation requise » — la validation se fait
-  **dans Axonaut** par un humain.
-- Nouveaux fournisseurs : création automatique seulement dans le cas strict du §8.3 ;
-  sinon anomalie → décision humaine.
-- Les anomalies et doublons ne sont jamais retraités automatiquement.
+Société isolée dans : champ `company` du JSON, sous-dossier Drive, préfixe de clé
+Data Store, table de configuration (société → dossiers, libellés, destinataire
+d'ingestion Axonaut propre à chaque compte). Ajouter BUSINESS ou MIX TERROIR = une
+ligne de configuration + une branche de Router. V1 : `company ≠ HD ECOMMERCE` → Route C.
