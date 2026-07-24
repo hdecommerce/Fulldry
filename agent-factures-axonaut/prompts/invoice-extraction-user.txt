@@ -1,0 +1,27 @@
+Analyse ce document et retourne uniquement un objet JSON strictement conforme à ce
+schéma (aucun autre texte) :
+
+{
+  "company": string,
+  "supplier_name": string | null,
+  "supplier_siret": string | null,
+  "supplier_vat_number": string | null,
+  "supplier_address": string | null,
+  "supplier_country": string | null,
+  "invoice_number": string | null,
+  "invoice_date": "AAAA-MM-JJ" | null,
+  "due_date": "AAAA-MM-JJ" | null,
+  "currency": string | null,
+  "amount_excluding_tax": number | null,
+  "vat_amount": number | null,
+  "amount_including_tax": number | null,
+  "vat_breakdown": [
+    { "rate": number, "taxable_amount": number, "vat_amount": number }
+  ],
+  "document_type": "invoice" | "credit_note" | "receipt" | "proforma" | "delivery_note" | "unknown",
+  "purchase_order_number": string | null,
+  "iban": string | null,
+  "confidence": number,
+  "anomalies": [ string ],
+  "raw_summary": string
+}

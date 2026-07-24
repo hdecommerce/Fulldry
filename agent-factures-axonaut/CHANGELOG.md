@@ -3,6 +3,38 @@
 Toutes les évolutions notables de ce projet sont documentées ici.
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
+## [0.3.0] — 2026-07-24
+
+### Ajouté — livrables Phase 3 (hors-ligne, prêts à configurer)
+- **Code testé** (Python stdlib, zéro dépendance) : normalisation fournisseur/numéro
+  (`src/utils/normalize.py`), nettoyage et anti-écrasement des noms de fichiers
+  (`src/utils/filenames.py`), SHA-256 (`src/utils/hashing.py`), clé de doublon
+  (`src/duplicates/dedup.py`), validations totaux/SIRET (Luhn)/TVA FR/dates
+  (`src/validation/validators.py`), codes d'anomalies bloquants et informatifs
+  (`src/validation/anomalies.py`). **59 tests unitaires verts.**
+- **Facture fictive** : générateur PDF sans dépendance
+  (`scripts/generate_test_invoice.py` → `tests/fixtures/invoice-standard-fr.pdf`,
+  21 Ko, FOURNITEST SARL, SIRET fictif série 999 valide Luhn, TVA 5,5 %) + 5 fixtures
+  JSON (standard, doublon, montants incohérents, proforma, confiance basse).
+- **Prompts IA** (`prompts/invoice-extraction-{system,user}.txt`) et **schéma JSON
+  Schema 2020-12** (`schemas/invoice-extraction.schema.json`) avec les 18 codes
+  d'anomalies normalisés.
+- **Modèle de journal** (`templates/invoice-processing-journal.csv`, 32 colonnes,
+  ligne d'exemple fictive).
+- **Documentation Phase 3** : `test-t0-axonaut.md` (procédure + checklist 10 points +
+  diagnostic), `gmail-labels.md` (5 libellés dont ERREURS-TECHNIQUES, filtres sans
+  transfert automatique), `google-drive-structure.md` (dossiers numérotés 00–06,
+  année/mois, conventions de nommage), `make-data-store.md`
+  (`hd_ecommerce_invoice_registry`, 35 champs typés, statuts, rétention),
+  `google-sheets-journal.md`, `make-scenario-phase-3.md` (modules tronc 1–13 +
+  routes A/B/C/E détaillés), `make-filters.md` (filtres et expressions exactes),
+  `manual-setup-checklist.md` (actions manuelles B1→B10 ordonnées).
+- `requirements.txt` (stdlib uniquement, pytest optionnel).
+
+### Modifié
+- `make-scenario.md` marqué document historique (référence → phase 3).
+- README : statut Phase 3, structure complète, commandes de test.
+
 ## [0.2.0] — 2026-07-24
 
 ### Modifié — décision d'architecture V1

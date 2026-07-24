@@ -1,5 +1,12 @@
 # Scénario Make V1 — « FACTURES-HD-V1 » (Phase 2)
 
+> **⚠️ Document historique (Phase 2).** La référence de construction est désormais
+> **[`make-scenario-phase-3.md`](make-scenario-phase-3.md)** (numérotation des
+> modules, route E « erreur technique », Data Store `hd_ecommerce_invoice_registry`,
+> filtres détaillés dans [`make-filters.md`](make-filters.md)). Les procédures de
+> test T0–T8 de ce document restent valables (T0 détaillé dans
+> [`test-t0-axonaut.md`](test-t0-axonaut.md)).
+
 Livrable Phase 2 : liste ordonnée des modules, filtres, expressions, Data Store,
 prompt IA, procédure de test et check-list de configuration manuelle.
 

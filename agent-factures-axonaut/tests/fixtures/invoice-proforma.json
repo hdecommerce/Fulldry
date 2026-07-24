@@ -1,0 +1,25 @@
+{
+  "_comment": "FIXTURE DE TEST — document proforma : ne doit JAMAIS partir vers Axonaut (code PROFORMA, Route C).",
+  "company": "HD ECOMMERCE",
+  "supplier_name": "FOURNITEST SARL",
+  "supplier_siret": "99900000110000",
+  "supplier_vat_number": "FR36999000001",
+  "supplier_address": "1 rue du Test, 63000 Clermont-Ferrand, France",
+  "supplier_country": "FR",
+  "invoice_number": "PRO-2026-014",
+  "invoice_date": "2026-07-10",
+  "due_date": null,
+  "currency": "EUR",
+  "amount_excluding_tax": 500.0,
+  "vat_amount": 100.0,
+  "amount_including_tax": 600.0,
+  "vat_breakdown": [
+    { "rate": 20.0, "taxable_amount": 500.0, "vat_amount": 100.0 }
+  ],
+  "document_type": "proforma",
+  "purchase_order_number": null,
+  "iban": null,
+  "confidence": 0.97,
+  "anomalies": ["Document identifié comme proforma, pas comme facture définitive."],
+  "raw_summary": "Proforma PRO-2026-014 de FOURNITEST SARL, 600,00 EUR TTC — pas une facture."
+}

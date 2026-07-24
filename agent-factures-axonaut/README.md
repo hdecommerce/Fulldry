@@ -26,9 +26,13 @@ pour ne jamais créer de doublon dans Axonaut.
 |---|---|---|
 | Phase 1 | Audit des intégrations Make / Axonaut, structure du projet | ✅ Terminée — [`docs/audit-make-axonaut.md`](docs/audit-make-axonaut.md) |
 | Phase 2 | Architecture définitive + spécification du scénario Make | ✅ Terminée — [`docs/architecture.md`](docs/architecture.md), [`docs/make-scenario.md`](docs/make-scenario.md) |
-| Phase 3 | Prototype (T0 puis construction du scénario dans Make) | 🔜 |
+| Phase 3 | Prototype — livrables hors-ligne (code, tests, docs, prompts, modèles) | ✅ Livrés — actions manuelles restantes : [`docs/manual-setup-checklist.md`](docs/manual-setup-checklist.md) |
+| Phase 3 (suite) | T0 puis construction du scénario dans Make | 🔜 Première action : **T0** ([`docs/test-t0-axonaut.md`](docs/test-t0-axonaut.md)) |
 | Phase 4 | Tests (T1 → T8) | ⏳ |
 | Phase 5 | Mise en production | ⏳ |
+
+**Tests unitaires** : `python3 -m unittest discover -s tests/unit` (59 tests, aucune
+dépendance externe). **PDF de test** : `python3 scripts/generate_test_invoice.py`.
 
 ## Ce que fait l'agent
 
@@ -76,25 +80,36 @@ confirmé, à ne pas présenter comme fonctionnel sans test réel.
 
 ```
 agent-factures-axonaut/
-├── README.md
-├── CHANGELOG.md
-├── .env.example          # Modèle de variables d'environnement (jamais de vraies clés)
-├── .gitignore
+├── README.md · CHANGELOG.md · requirements.txt (stdlib uniquement)
+├── .env.example · .gitignore          # jamais de vraies clés
 ├── docs/
-│   ├── architecture.md           # Architecture cible V1 (ingestion expense@axonaut.com) + Plan B
-│   ├── make-scenario.md          # Phase 2 : modules ordonnés, filtres, expressions, tests, config
-│   └── audit-make-axonaut.md     # Audit Phase 1 : modules Make & API Axonaut vérifiés
-├── examples/
-│   └── invoice-output.json       # Exemple de sortie JSON de l'extraction IA
-├── src/                  # Code complémentaire (contrôles, normalisation, hash) — Phase 2+
-│   ├── config/  api/{axonaut,ai,google}/  extraction/  validation/
-│   ├── duplicates/  logging/  security/  utils/
+│   ├── architecture.md                # Architecture V1 (expense@axonaut.com) + Plan B
+│   ├── audit-make-axonaut.md          # Audit Phase 1 (points bloquants résolus)
+│   ├── make-scenario-phase-3.md       # ★ Référence de construction : modules A/B/C/E
+│   ├── make-filters.md                # Filtres + expressions Make exactes
+│   ├── make-data-store.md             # Structure hd_ecommerce_invoice_registry
+│   ├── make-scenario.md               # (historique Phase 2 ; tests T0–T8)
+│   ├── test-t0-axonaut.md             # ★ Test fondateur de l'ingestion Axonaut
+│   ├── gmail-labels.md                # Libellés + filtres Gmail
+│   ├── google-drive-structure.md      # Arborescence Drive + nommage
+│   ├── google-sheets-journal.md       # Journal d'audit
+│   └── manual-setup-checklist.md      # ★ Actions manuelles B1→B10, dans l'ordre
+├── prompts/                           # Prompts système + utilisateur de l'extraction
+├── schemas/invoice-extraction.schema.json
+├── templates/invoice-processing-journal.csv
+├── scripts/generate_test_invoice.py   # PDF fictif sans dépendance
+├── examples/invoice-output.json
+├── src/                               # Fonctions testées : normalisation, noms de
+│   ├── utils/  validation/  duplicates/   # fichiers, hash, clé doublon, SIRET/TVA/dates,
+│   └── ...                                # codes d'anomalies
 └── tests/
-    ├── unit/  integration/  fixtures/
+    ├── unit/       # 59 tests (unittest, stdlib)
+    └── fixtures/   # 5 cas JSON + invoice-standard-fr.pdf (fictifs)
 ```
 
 Le code n'est créé que lorsque Make ne suffit pas (contrôles complexes, normalisation,
-hash, appels API absents du connecteur). L'orchestration reste dans Make.
+hash). L'orchestration reste dans Make ; les expressions Make et les fonctions Python
+sont maintenues équivalentes (mêmes entrées → mêmes sorties).
 
 ## Sécurité
 

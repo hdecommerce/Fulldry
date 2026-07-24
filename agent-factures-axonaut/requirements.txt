@@ -1,0 +1,8 @@
+# Aucune dépendance obligatoire : le code du projet (src/, scripts/) et ses tests
+# n'utilisent que la bibliothèque standard Python (>= 3.10).
+#
+# Tests :   python3 -m unittest discover -s tests/unit
+# PDF test : python3 scripts/generate_test_invoice.py
+#
+# Dépendance optionnelle de confort :
+# pytest>=8.0  # alternative à unittest (pytest tests/unit)
