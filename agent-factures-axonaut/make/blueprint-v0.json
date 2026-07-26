@@ -15,7 +15,10 @@
       },
       "mapper": {},
       "metadata": {
-        "designer": { "x": 0, "y": 0 },
+        "designer": {
+          "x": 0,
+          "y": 0
+        },
         "notes": "Surveille le libellé FACTURES AXONAUT. Activer la récupération des pièces jointes."
       }
     },
@@ -28,7 +31,10 @@
         "array": "{{1.attachments}}"
       },
       "metadata": {
-        "designer": { "x": 300, "y": 0 },
+        "designer": {
+          "x": 300,
+          "y": 0
+        },
         "notes": "Iterator des pièces jointes."
       }
     },
@@ -41,28 +47,100 @@
         "name": "Piece jointe exploitable",
         "conditions": [
           [
-            { "a": "{{2.mimeType}}", "o": "text:equal", "b": "application/pdf" },
-            { "a": "{{2.size}}", "o": "number:greaterorequal", "b": "15000" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "logo" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "signature" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "image00" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "smime" }
+            {
+              "a": "{{2.mimeType}}",
+              "o": "text:equal",
+              "b": "application/pdf"
+            },
+            {
+              "a": "{{2.size}}",
+              "o": "number:greaterorequal",
+              "b": "15000"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "logo"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "signature"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "image00"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "smime"
+            }
           ],
           [
-            { "a": "{{2.mimeType}}", "o": "text:equal", "b": "image/jpeg" },
-            { "a": "{{2.size}}", "o": "number:greaterorequal", "b": "15000" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "logo" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "signature" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "image00" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "smime" }
+            {
+              "a": "{{2.mimeType}}",
+              "o": "text:equal",
+              "b": "image/jpeg"
+            },
+            {
+              "a": "{{2.size}}",
+              "o": "number:greaterorequal",
+              "b": "15000"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "logo"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "signature"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "image00"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "smime"
+            }
           ],
           [
-            { "a": "{{2.mimeType}}", "o": "text:equal", "b": "image/png" },
-            { "a": "{{2.size}}", "o": "number:greaterorequal", "b": "15000" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "logo" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "signature" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "image00" },
-            { "a": "{{lower(2.fileName)}}", "o": "text:notcontain", "b": "smime" }
+            {
+              "a": "{{2.mimeType}}",
+              "o": "text:equal",
+              "b": "image/png"
+            },
+            {
+              "a": "{{2.size}}",
+              "o": "number:greaterorequal",
+              "b": "15000"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "logo"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "signature"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "image00"
+            },
+            {
+              "a": "{{lower(2.fileName)}}",
+              "o": "text:notcontain",
+              "b": "smime"
+            }
           ]
         ]
       },
@@ -72,24 +150,33 @@
         "value": "{{sha256(2.data)}}"
       },
       "metadata": {
-        "designer": { "x": 600, "y": 0 },
+        "designer": {
+          "x": 600,
+          "y": 0
+        },
         "notes": "Empreinte SHA-256 du fichier (cle anti-doublon V0)."
       }
     },
     {
       "id": 4,
       "module": "google-drive:uploadAFile",
-      "version": 1,
+      "version": 4,
       "parameters": {
         "account": null
       },
       "mapper": {
-        "folderId": "REMPLACER_PAR_ID_DOSSIER_00_ARCHIVES_ORIGINALES",
-        "title": "{{formatDate(now; \"YYYY-MM-DD_HHmmss\")}}_{{2.fileName}}",
-        "data": "{{2.data}}"
+        "select": "value",
+        "destination": "drive",
+        "folderId": "",
+        "filename": "{{formatDate(now; \"YYYY-MM-DD_HHmmss\")}}_{{2.fileName}}",
+        "data": "{{2.data}}",
+        "convert": false
       },
       "metadata": {
-        "designer": { "x": 900, "y": 0 },
+        "designer": {
+          "x": 900,
+          "y": 0
+        },
         "notes": "Archivage de l'original AVANT tout envoi. Selectionner le dossier 00_ARCHIVES_ORIGINALES."
       }
     },
@@ -104,7 +191,10 @@
         "key": "{{3.file_sha256}}"
       },
       "metadata": {
-        "designer": { "x": 1200, "y": 0 },
+        "designer": {
+          "x": 1200,
+          "y": 0
+        },
         "notes": "Le fichier a-t-il deja ete traite ?"
       }
     },
@@ -114,7 +204,12 @@
       "version": 1,
       "parameters": {},
       "mapper": null,
-      "metadata": { "designer": { "x": 1500, "y": 0 } },
+      "metadata": {
+        "designer": {
+          "x": 1500,
+          "y": 0
+        }
+      },
       "routes": [
         {
           "flow": [
@@ -122,20 +217,35 @@
               "id": 7,
               "module": "google-email:ActionModifyEmailLabels",
               "version": 1,
-              "parameters": { "account": null },
+              "parameters": {
+                "account": null
+              },
               "filter": {
                 "name": "DOUBLON",
                 "conditions": [
-                  [ { "a": "{{5.exists}}", "o": "boolean:equal", "b": "true" } ]
+                  [
+                    {
+                      "a": "{{5.exists}}",
+                      "o": "boolean:equal",
+                      "b": "true"
+                    }
+                  ]
                 ]
               },
               "mapper": {
                 "emailId": "{{1.id}}",
-                "addLabels": [ "FACTURES AXONAUT/DOUBLONS" ],
-                "removeLabels": [ "FACTURES AXONAUT" ]
+                "addLabels": [
+                  "FACTURES AXONAUT/DOUBLONS"
+                ],
+                "removeLabels": [
+                  "FACTURES AXONAUT"
+                ]
               },
               "metadata": {
-                "designer": { "x": 1800, "y": -150 },
+                "designer": {
+                  "x": 1800,
+                  "y": -150
+                },
                 "notes": "Doublon : aucun envoi a Axonaut. Selectionner les libelles dans les listes."
               }
             },
@@ -143,15 +253,22 @@
               "id": 8,
               "module": "google-email:ActionSendEmail",
               "version": 2,
-              "parameters": { "account": null },
+              "parameters": {
+                "account": null
+              },
               "mapper": {
-                "to": [ "hdecommerce63@gmail.com" ],
+                "to": [
+                  "hdecommerce63@gmail.com"
+                ],
                 "subject": "[FACTURES][DOUBLON] {{2.fileName}}",
                 "contentType": "text",
                 "text": "Doublon detecte : {{2.fileName}} a deja ete envoye a Axonaut le {{5.record.sent_at}}. Aucun nouvel envoi effectue. Email d'origine : {{1.subject}}."
               },
               "metadata": {
-                "designer": { "x": 2100, "y": -150 },
+                "designer": {
+                  "x": 2100,
+                  "y": -150
+                },
                 "notes": "Alerte doublon (a vous-meme)."
               }
             }
@@ -170,7 +287,13 @@
               "filter": {
                 "name": "ENVOI (pas un doublon)",
                 "conditions": [
-                  [ { "a": "{{5.exists}}", "o": "boolean:equal", "b": "false" } ]
+                  [
+                    {
+                      "a": "{{5.exists}}",
+                      "o": "boolean:equal",
+                      "b": "false"
+                    }
+                  ]
                 ]
               },
               "mapper": {
@@ -184,7 +307,10 @@
                 }
               },
               "metadata": {
-                "designer": { "x": 1800, "y": 150 },
+                "designer": {
+                  "x": 1800,
+                  "y": 150
+                },
                 "notes": "Verrou ecrit AVANT l'envoi : un plantage ne peut jamais provoquer un double envoi."
               }
             },
@@ -192,18 +318,28 @@
               "id": 10,
               "module": "google-email:ActionSendEmail",
               "version": 2,
-              "parameters": { "account": null },
+              "parameters": {
+                "account": null
+              },
               "mapper": {
-                "to": [ "expense@axonaut.com" ],
+                "to": [
+                  "expense@axonaut.com"
+                ],
                 "subject": "Facture fournisseur - {{2.fileName}}",
                 "contentType": "text",
                 "text": "Facture fournisseur HD ECOMMERCE transmise pour traitement. Validation requise dans Axonaut.",
                 "attachments": [
-                  { "fileName": "{{2.fileName}}", "data": "{{2.data}}" }
+                  {
+                    "fileName": "{{2.fileName}}",
+                    "data": "{{2.data}}"
+                  }
                 ]
               },
               "metadata": {
-                "designer": { "x": 2100, "y": 150 },
+                "designer": {
+                  "x": 2100,
+                  "y": 150
+                },
                 "notes": "SEUL point de sortie vers Axonaut."
               }
             },
@@ -227,7 +363,10 @@
                 }
               },
               "metadata": {
-                "designer": { "x": 2400, "y": 150 },
+                "designer": {
+                  "x": 2400,
+                  "y": 150
+                },
                 "notes": "Confirmation de l'envoi."
               }
             },
@@ -235,14 +374,23 @@
               "id": 12,
               "module": "google-email:ActionModifyEmailLabels",
               "version": 1,
-              "parameters": { "account": null },
+              "parameters": {
+                "account": null
+              },
               "mapper": {
                 "emailId": "{{1.id}}",
-                "addLabels": [ "FACTURES AXONAUT/ENVOYEES" ],
-                "removeLabels": [ "FACTURES AXONAUT" ]
+                "addLabels": [
+                  "FACTURES AXONAUT/ENVOYEES"
+                ],
+                "removeLabels": [
+                  "FACTURES AXONAUT"
+                ]
               },
               "metadata": {
-                "designer": { "x": 2700, "y": 150 },
+                "designer": {
+                  "x": 2700,
+                  "y": 150
+                },
                 "notes": "L'email passe dans le sous-dossier ENVOYEES."
               }
             }
@@ -263,6 +411,8 @@
       "dataloss": false,
       "dlq": false
     },
-    "designer": { "orphans": [] }
+    "designer": {
+      "orphans": []
+    }
   }
 }
