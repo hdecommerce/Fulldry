@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hd-ecommerce.example/schemas/invoice-extraction.schema.json",
+  "title": "Extraction de facture fournisseur",
+  "description": "Sortie attendue du moteur d'extraction IA. Toute réponse non conforme part en Route C (anomalie).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "company",
+    "supplier_name",
+    "supplier_siret",
+    "supplier_vat_number",
+    "supplier_address",
+    "supplier_country",
+    "invoice_number",
+    "invoice_date",
+    "due_date",
+    "currency",
+    "amount_excluding_tax",
+    "vat_amount",
+    "amount_including_tax",
+    "vat_breakdown",
+    "document_type",
+    "purchase_order_number",
+    "iban",
+    "confidence",
+    "anomalies",
+    "raw_summary"
+  ],
+  "properties": {
+    "company": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Société DESTINATAIRE de la facture (cliente). V1 : doit valoir « HD ECOMMERCE » pour la Route A."
+    },
+    "supplier_name": { "type": ["string", "null"] },
+    "supplier_siret": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9 ]{14,18}$",
+      "description": "SIRET français : 14 chiffres (espaces tolérés). Null si absent — ne jamais deviner."
+    },
+    "supplier_vat_number": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Z]{2}[0-9A-Z ]{2,13}$"
+    },
+    "supplier_address": { "type": ["string", "null"] },
+    "supplier_country": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Z]{2}$",
+      "description": "Code pays ISO 3166-1 alpha-2."
+    },
+    "invoice_number": { "type": ["string", "null"] },
+    "invoice_date": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "due_date": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "currency": {
+      "type": ["string", "null"],
+      "pattern": "^[A-Z]{3}$",
+      "description": "Code ISO 4217. V1 : seul EUR est accepté en Route A."
+    },
+    "amount_excluding_tax": { "type": ["number", "null"] },
+    "vat_amount": { "type": ["number", "null"] },
+    "amount_including_tax": { "type": ["number", "null"] },
+    "vat_breakdown": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rate", "taxable_amount", "vat_amount"],
+        "properties": {
+          "rate": { "type": "number", "minimum": 0, "maximum": 100 },
+          "taxable_amount": { "type": "number" },
+          "vat_amount": { "type": "number" }
+        }
+      }
+    },
+    "document_type": {
+      "type": "string",
+      "enum": ["invoice", "credit_note", "receipt", "proforma", "delivery_note", "unknown"]
+    },
+    "purchase_order_number": { "type": ["string", "null"] },
+    "iban": {
+      "type": ["string", "null"],
+      "description": "Extrait pour contrôle interne éventuel. TOUJOURS masqué dans le journal, les alertes et les logs."
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "anomalies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Codes d'anomalies (voir liste ci-dessous), éventuellement suivis d'une explication après « : »."
+    },
+    "raw_summary": { "type": "string" }
+  },
+  "$comment": "Codes d'anomalies normalisés — bloquants : MISSING_SUPPLIER, MISSING_INVOICE_NUMBER, INVALID_DATE, INVALID_SIRET, INVALID_VAT_NUMBER, AMOUNT_MISMATCH, UNKNOWN_COMPANY, UNSUPPORTED_CURRENCY, LOW_CONFIDENCE, CREDIT_NOTE, PROFORMA, DELIVERY_NOTE, UNKNOWN_DOCUMENT, UNREADABLE_DOCUMENT, FUTURE_INVOICE_DATE, INVALID_DUE_DATE — informatifs : MULTIPLE_VAT_RATES, POSSIBLE_DUPLICATE (posé par le scénario, jamais par l'IA)."
+}

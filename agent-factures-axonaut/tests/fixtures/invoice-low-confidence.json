@@ -1,0 +1,25 @@
+{
+  "_comment": "FIXTURE DE TEST — document difficilement lisible : confiance 0,72 < 0,95, plusieurs champs indisponibles. Doit produire LOW_CONFIDENCE (Route C).",
+  "company": "HD ECOMMERCE",
+  "supplier_name": "FOURNITEST SARL",
+  "supplier_siret": null,
+  "supplier_vat_number": null,
+  "supplier_address": null,
+  "supplier_country": "FR",
+  "invoice_number": "FT-2026-003",
+  "invoice_date": "2026-07-12",
+  "due_date": null,
+  "currency": "EUR",
+  "amount_excluding_tax": 84.0,
+  "vat_amount": 16.8,
+  "amount_including_tax": 100.8,
+  "vat_breakdown": [
+    { "rate": 20.0, "taxable_amount": 84.0, "vat_amount": 16.8 }
+  ],
+  "document_type": "invoice",
+  "purchase_order_number": null,
+  "iban": null,
+  "confidence": 0.72,
+  "anomalies": ["Document partiellement illisible : numérisation de faible qualité."],
+  "raw_summary": "Facture probable FT-2026-003, lecture partielle (document flou)."
+}
