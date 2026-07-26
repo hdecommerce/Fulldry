@@ -129,7 +129,7 @@ Dans l'ordre :
 
 | Date | Exécutant | Résultat | Notes |
 |---|---|---|---|
-| _à remplir_ | | VERT / ROUGE | |
+| 2026-07-24 | HD ECOMMERCE (hdecommerce63@gmail.com) | **VERT ✅** | Test réalisé avec une facture réelle (Rafael Baró VV26000955) transférée à expense@axonaut.com depuis la boîte principale. Dépense créée dans « Dépenses à traiter », PDF joint, OCR OK, non payée. Envoyée deux fois par erreur → doublon supprimé manuellement dans Axonaut (comportement que le scénario Make bloquera automatiquement). Aucun rejet SMTP constaté. Adresse expéditrice reconnue par Axonaut. |
 
 ## 10. Nettoyage après T0
 

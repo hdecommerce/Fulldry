@@ -66,7 +66,7 @@ Créer `hd_ecommerce_invoice_registry` avec : clé = hash SHA-256, champs
 ## Checklist de mise en route (dans l'ordre)
 
 1. ✅ Libellés Gmail — déjà créés.
-2. ☐ **T0 vert** (`test-t0-axonaut.md`) — 15 min.
+2. ✅ **T0 vert** (2026-07-24, facture réelle Rafael Baró — voir `test-t0-axonaut.md` §9).
 3. ☐ Dossier Drive `FACTURES FOURNISSEURS/HD ECOMMERCE/00_ARCHIVES_ORIGINALES` — 2 min.
 4. ☐ Make : connexions Gmail + Drive — 5 min.
 5. ☐ Make : Data Store V0 (structure ci-dessus) — 5 min.
