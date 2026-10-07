@@ -159,7 +159,7 @@ mark { background: var(--warn-soft); color: var(--ink); border-radius: 4px; padd
       </div>
       <input class="sr" type="file" id="cam" accept="image/*" capture="environment">
       <input class="sr" type="file" id="gal" accept="image/*" multiple>
-      <div id="noimg" class="banner bad" hidden>La lecture des photos par Claude n'est pas disponible dans cette vue. Ouvre la page depuis claude.ai, connecté à ton compte.</div>
+      <div id="noimg" class="banner warn" hidden></div>
       <div class="thumbs" id="thumbs"></div>
     </div>
 
@@ -213,7 +213,7 @@ mark { background: var(--warn-soft); color: var(--ink); border-radius: 4px; padd
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-  let mcp = null, sample = null, downloads = null, canImages = false;
+  let mcp = null, sample = null, downloads = null, canImages = "inconnu";
   const st = { orders: [], cur: null, photos: [], lines: [], check: null, checking: false, saving: false, registry: null };
   let pid = 0, lid = 0;
 
@@ -432,7 +432,7 @@ Réponds uniquement par un tableau JSON, ex. : [{"produit":"Fuet Catalan 160 g",
   async function readPhoto(p) {
     const orderId = st.cur && st.cur.id;
     try {
-      if (!sample || !canImages) throw { code: "images_unavailable" };
+      if (!sample) throw { code: "sampling_disabled" };
       p.blob = p.blob || await shrink(p.file);
       let items = sanitizeItems(await sample.json(READ_PROMPT, { images: [p.blob], modelTier: "default" }));
       if (!items.length || items.some((i) => i.doute)) {
@@ -446,12 +446,14 @@ Réponds uniquement par un tableau JSON, ex. : [{"produit":"Fuet Catalan 160 g",
       mergeLines(); renderLines(); saveDraft(); scheduleCheck();
     } catch (e) {
       const code = e && e.code;
-      if (code === "not_granted" || code === "sampling_disabled" || code === "images_unavailable") { p.status = "erreur"; p.err = "Lecture IA non autorisée"; $("noimg").hidden = false; return; }
+      if (code === "images_unavailable") { canImages = false; p.status = "erreur"; p.err = "Photos non prises en charge ici"; noImg("Cette vue ne peut pas envoyer de photos à Claude (code images_unavailable). Essaie dans l'application Claude ou sur un ordinateur. En attendant, saisis le lot et la date avec « + Ajouter une ligne »."); return; }
+      if (code === "not_granted" || code === "sampling_disabled" || code === "not_declared" || code === "capability_disabled") { p.status = "erreur"; p.err = "Lecture IA non autorisée"; noImg("Tu n'as pas autorisé cette page à utiliser Claude (code " + code + "). Recharge la page et accepte la demande d'autorisation."); return; }
       if ((code === "upstream_error" || code === "invalid_json") && p.tries < 1) { p.tries++; await new Promise((r) => setTimeout(r, 5000)); return readPhoto(p); }
       p.status = "erreur"; p.err = code === "rate_limited" ? "Trop de lectures, attends un peu" : code === "image_rejected" ? "Photo refusée" : "Lecture échouée";
     }
   }
 
+  function noImg(t) { const el = $("noimg"); el.textContent = t; el.hidden = false; }
   function renderThumbs() {
     const lab = { attente: ["busy", "En attente"], lecture: ["busy", "Lecture…"], relecture: ["busy", "Relecture précise…"], ok: ["ok", "✓ Lu"], verifier: ["warn", "À vérifier"], vide: ["warn", "Aucune étiquette vue"], erreur: ["bad", ""] };
     $("thumbs").innerHTML = st.photos.map((p) => {
@@ -716,8 +718,8 @@ Réponds uniquement en JSON :
     if (!C || !C.use) { $("orders").innerHTML = '<div class="banner bad">Ouvre cette page depuis claude.ai pour qu\'elle puisse parler à Shopify et à Claude.</div>'; return; }
     const [m, s, d] = await Promise.all([C.use("mcp"), C.use("sample"), C.use("downloads")]);
     mcp = m; sample = s; downloads = d;
-    if (sample) { try { canImages = !!(await sample.limits()).images; } catch { canImages = false; } }
-    $("noimg").hidden = !!(sample && canImages);
+    if (!sample) noImg("Claude n'est pas joignable depuis cette vue : la lecture automatique des étiquettes ne marchera pas ici. Tu peux quand même saisir les lignes à la main.");
+    else { try { const lim = await sample.limits(); canImages = !!lim.images; if (!canImages) noImg("D'après claude.ai, cette vue ne peut pas envoyer de photos à Claude. La page essaiera quand même à la première photo ; si ça échoue, ouvre-la dans l'application Claude ou sur un ordinateur."); } catch { canImages = "inconnu"; } }
     if (!mcp) { $("orders").innerHTML = '<div class="banner bad">Les connecteurs ne sont pas disponibles dans cette vue. Ouvre la page depuis claude.ai, connecté à ton compte.</div>'; return; }
     loadOrders();
     setInterval(() => { if (document.visibilityState === "visible" && !st.saving && !st.photos.some((p) => p.status === "lecture")) loadOrders(); }, 120000);
