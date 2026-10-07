@@ -1,0 +1,726 @@
+<title>Traçabilité colis SaucBack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Jost:wght@400;500;600&display=swap">
+<style>
+/* Layout : un seul écran tablette — commandes en haut, colis en cours, photos, lignes lues, enregistrement. Onglet Registre à part. */
+:root {
+  --bg: #f4efe6;
+  --surface: #fffaf2;
+  --line: #ddd2c1;
+  --ink: #2a2622;
+  --muted: #6e655b;
+  --accent: #8c2f23;
+  --accent-ink: #fffaf2;
+  --ok: #3d6b45;
+  --ok-soft: #e3eedf;
+  --warn: #a0621a;
+  --warn-soft: #f6e7d2;
+  --bad: #a8291c;
+  --bad-soft: #f7dcd6;
+  --f-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --f-body: "Jost", "Segoe UI", Roboto, system-ui, sans-serif;
+  --tap: 56px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1d1a17; --surface: #27231f; --line: #3d3731; --ink: #f1e9dc; --muted: #b3a797;
+    --accent: #c9604f; --accent-ink: #1d1a17; --ok: #7fb487; --ok-soft: #26352a;
+    --warn: #e0a35a; --warn-soft: #3a2e1f; --bad: #ec7a6b; --bad-soft: #3d2420; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1d1a17; --surface: #27231f; --line: #3d3731; --ink: #f1e9dc; --muted: #b3a797;
+  --accent: #c9604f; --accent-ink: #1d1a17; --ok: #7fb487; --ok-soft: #26352a;
+  --warn: #e0a35a; --warn-soft: #3a2e1f; --bad: #ec7a6b; --bad-soft: #3d2420; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 18px/1.45 var(--f-body); }
+.wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 12px 48px; display: grid; gap: 18px; }
+header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+h1, h2 { font-family: var(--f-display); font-weight: 700; margin: 0; text-wrap: balance; }
+h1 { font-size: 2rem; color: var(--accent); }
+h2 { font-size: 1.5rem; }
+.tabs { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+.tabs button { min-height: 48px; padding: 0 22px; border-radius: 999px; border: 0; background: transparent; color: var(--ink); font: 500 1rem var(--f-body); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+button, .btn { font: 500 1rem var(--f-body); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 0 22px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; text-align: center; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.go { background: var(--ok); border-color: var(--ok); color: var(--accent-ink); }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn:focus-visible, .tabs button:focus-visible, input:focus-visible, select:focus-visible, .order:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn.small { min-height: 44px; padding: 0 14px; font-size: .95rem; }
+.label { font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.muted { color: var(--muted); }
+.banner { border-radius: 12px; padding: 12px 16px; font-weight: 500; }
+.banner.ok { background: var(--ok-soft); color: var(--ok); }
+.banner.warn { background: var(--warn-soft); color: var(--warn); }
+.banner.bad { background: var(--bad-soft); color: var(--bad); }
+.banner.info { background: var(--bg); border: 1px solid var(--line); color: var(--ink); }
+
+/* Commandes */
+.orders { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.order { flex: 0 0 auto; min-width: 170px; text-align: left; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 14px; padding: 10px 14px; cursor: pointer; display: grid; gap: 2px; font: inherit; }
+.order[aria-pressed="true"] { border: 2px solid var(--accent); padding: 9px 13px; }
+.order .num { font-weight: 600; font-variant-numeric: tabular-nums; }
+.chip { display: inline-block; font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); color: var(--muted); }
+.chip.temu { color: var(--warn); border-color: var(--warn); }
+.chip.tiktok { color: var(--ink); }
+.chip.web { color: var(--accent); border-color: var(--accent); }
+
+/* À flasher */
+.expect { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.expect li { display: grid; grid-template-columns: 40px 1fr; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); }
+.expect .mark { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; border: 2px solid var(--line); color: var(--muted); }
+.expect li.ok .mark { background: var(--ok); border-color: var(--ok); color: var(--accent-ink); }
+.expect li.miss .mark { border-color: var(--bad); color: var(--bad); }
+.expect .box { font-size: .9rem; color: var(--muted); margin-top: 4px; }
+
+/* Photos */
+.capture { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
+.capture .btn { min-height: 84px; font-size: 1.2rem; }
+.thumbs { display: flex; flex-wrap: wrap; gap: 10px; }
+.thumb { position: relative; width: 110px; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: var(--bg); }
+.thumb img { display: block; width: 110px; height: 82px; object-fit: cover; }
+.thumb .st { font-size: .78rem; padding: 4px 8px; font-weight: 600; }
+.thumb .st.ok { color: var(--ok); } .thumb .st.warn { color: var(--warn); } .thumb .st.bad { color: var(--bad); } .thumb .st.busy { color: var(--muted); }
+.thumb .x { position: absolute; top: 4px; right: 4px; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(0,0,0,.6); color: #fff; font-size: 1rem; cursor: pointer; }
+.thumb .retry { width: 100%; border: 0; border-top: 1px solid var(--line); background: var(--surface); color: var(--accent); min-height: 36px; cursor: pointer; font: 600 .82rem var(--f-body); }
+
+/* Lignes */
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 720px; }
+th { text-align: left; font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 6px; font-weight: 600; }
+td { padding: 6px; border-top: 1px solid var(--line); vertical-align: top; }
+td input, td select, .field { width: 100%; min-height: 48px; font: 1rem var(--f-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; }
+td.qte input { width: 70px; text-align: center; font-variant-numeric: tabular-nums; }
+td input.lot { font-variant-numeric: tabular-nums; letter-spacing: .03em; }
+tr.has-bad input.bad, tr.has-warn input.warn { border-color: var(--bad); }
+tr .msg { font-size: .82rem; margin-top: 4px; }
+tr .msg.bad { color: var(--bad); } tr .msg.warn { color: var(--warn); }
+.del { width: 44px; min-height: 44px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; font-size: 1.1rem; }
+
+.savebar { display: grid; gap: 10px; }
+.savebar .btn.go { min-height: 72px; font-size: 1.25rem; }
+.force { display: flex; gap: 10px; align-items: center; font-size: .95rem; }
+.force input { width: 26px; height: 26px; }
+
+/* Registre */
+.search { display: flex; gap: 10px; flex-wrap: wrap; }
+.search .field { flex: 1 1 240px; }
+.reg { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.reg li { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; }
+.reg .items { font-size: .95rem; white-space: pre-wrap; font-variant-numeric: tabular-nums; }
+mark { background: var(--warn-soft); color: var(--ink); border-radius: 4px; padding: 0 2px; }
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+@media (max-width: 640px) { .capture { grid-template-columns: 1fr; } h1 { font-size: 1.6rem; } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Traçabilité colis</h1>
+    <div class="tabs" role="tablist">
+      <button id="tab-prep" role="tab" aria-selected="true">Préparer</button>
+      <button id="tab-reg" role="tab" aria-selected="false">Registre</button>
+    </div>
+  </header>
+
+  <div id="global" class="banner info" hidden></div>
+
+  <!-- ============ PRÉPARER ============ -->
+  <section id="view-prep" style="display:grid;gap:18px">
+    <div class="panel">
+      <div class="row" style="justify-content:space-between">
+        <span class="label">Commandes à préparer</span>
+        <button class="btn small" id="refresh">Actualiser</button>
+      </div>
+      <div class="orders" id="orders"><span class="muted">Chargement des commandes Shopify…</span></div>
+    </div>
+
+    <div class="panel" id="current" hidden>
+      <div class="row" style="justify-content:space-between">
+        <h2 id="cur-title"></h2>
+        <span class="muted" id="cur-meta"></span>
+      </div>
+      <div id="cur-alert" class="banner warn" hidden></div>
+      <span class="label">À flasher</span>
+      <ul class="expect" id="expect"></ul>
+    </div>
+
+    <div class="panel" id="photos" hidden>
+      <span class="label">Photos des étiquettes</span>
+      <div class="capture">
+        <label class="btn primary" for="cam">📷 Prendre une photo</label>
+        <label class="btn" for="gal">Depuis la galerie</label>
+      </div>
+      <input class="sr" type="file" id="cam" accept="image/*" capture="environment">
+      <input class="sr" type="file" id="gal" accept="image/*" multiple>
+      <div id="noimg" class="banner bad" hidden>La lecture des photos par Claude n'est pas disponible dans cette vue. Ouvre la page depuis claude.ai, connecté à ton compte.</div>
+      <div class="thumbs" id="thumbs"></div>
+    </div>
+
+    <div class="panel" id="lines" hidden>
+      <div class="row" style="justify-content:space-between">
+        <span class="label">Contenu du colis (lu sur les étiquettes)</span>
+        <button class="btn small" id="addline">+ Ajouter une ligne</button>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Produit</th><th>Lot</th><th>Date limite</th><th>Type</th><th>Qté</th><th></th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <p class="muted" id="nolines" style="margin:0">Aucune étiquette lue pour l'instant. Prends une photo de chaque produit mis dans le colis.</p>
+    </div>
+
+    <div class="panel savebar" id="save" hidden>
+      <div id="check" class="banner info">Le contrôle de la commande démarre dès la première étiquette lue.</div>
+      <label class="force" id="force-wrap" hidden><input type="checkbox" id="force"> Enregistrer quand même (rupture, remplacement, produit vérifié à la main)</label>
+      <button class="btn go" id="savebtn" disabled>Enregistrer dans Shopify</button>
+      <div id="saveres" hidden></div>
+    </div>
+  </section>
+
+  <!-- ============ REGISTRE ============ -->
+  <section id="view-reg" hidden style="display:grid;gap:18px">
+    <div class="panel">
+      <span class="label">Recherche rappel produit</span>
+      <form class="search" id="sform">
+        <input class="field" id="q" placeholder="N° de lot (ex. L24158) ou n° de commande" autocomplete="off">
+        <button class="btn primary" type="submit">Rechercher</button>
+        <button class="btn" type="button" id="csv">Exporter CSV</button>
+      </form>
+      <div id="sres" class="muted">Les colis tracés sont lus depuis les notes des commandes Shopify (tag « Traça OK » ou « Traça forcée »).</div>
+    </div>
+    <div class="panel">
+      <span class="label">Derniers colis tracés</span>
+      <ul class="reg" id="reg"><li class="muted">Ouvre cet onglet pour charger le registre.</li></ul>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const SHOP = "Shopify";
+  const TAG_OK = "Traça OK", TAG_FORCE = "Traça forcée";
+  const B_START = "--- Traça SaucBack ---", B_END = "--- fin traça ---";
+  const BOX_RE = /\b(box|coffret|assortiment|panier|plateau|colis|lot de)\b/i;
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  let mcp = null, sample = null, downloads = null, canImages = false;
+  const st = { orders: [], cur: null, photos: [], lines: [], check: null, checking: false, saving: false, registry: null };
+  let pid = 0, lid = 0;
+
+  // ---------- utilitaires métier ----------
+  const pad = (n) => String(n).padStart(2, "0");
+  function normDate(raw) {
+    let s = String(raw || "").trim();
+    if (!s) return { v: "", ok: false };
+    let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (m) s = `${m[3]}/${m[2]}/${m[1]}`;
+    m = s.match(/^(\d{1,2})[\/.\- ](\d{1,2})[\/.\- ](\d{2}|\d{4})$/);
+    if (m) {
+      const d = +m[1], mo = +m[2]; let y = +m[3]; if (y < 100) y += 2000;
+      const dt = new Date(y, mo - 1, d);
+      if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) return { v: s, ok: false };
+      return { v: `${pad(d)}/${pad(mo)}/${y}`, ok: true, date: dt };
+    }
+    m = s.match(/^(\d{1,2})[\/.\- ](\d{2}|\d{4})$/);
+    if (m) {
+      const mo = +m[1]; let y = +m[2]; if (y < 100) y += 2000;
+      if (mo < 1 || mo > 12) return { v: s, ok: false };
+      return { v: `${pad(mo)}/${y}`, ok: true, date: new Date(y, mo, 0) }; // fin du mois
+    }
+    return { v: s, ok: false };
+  }
+  const cleanLot = (s) => String(s || "").toUpperCase().replace(/\s+/g, "").replace(/^(LOTE|LOTN°|LOTNO|LOT|BATCH|L:|L\.)[:.\-°]*/, "");
+  const searchLot = (s) => cleanLot(s).replace(/[^A-Z0-9]/g, "");
+  const normName = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  const today0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+  const stripHtml = (h) => { const d = document.createElement("div"); d.innerHTML = h || ""; return (d.textContent || "").replace(/\s+/g, " ").trim(); };
+  const canal = (o) => { const s = (o.sourceName || "").toLowerCase() + " " + (o.tags || []).join(" ").toLowerCase(); return s.includes("temu") ? "Temu" : s.includes("tiktok") ? "TikTok" : "Site"; };
+  const client = (o) => { const a = o.shippingAddress || {}; const f = (a.firstName || "").trim().split(/\s+/)[0] || ""; const l = (a.lastName || "").trim(); return (f + (l ? " " + l[0] + "." : "")).trim() || "Client"; };
+
+  function lineIssues(l) {
+    const out = [];
+    if (!l.produit.trim()) out.push(["bad", "Produit manquant"]);
+    if (!l.lot.trim()) out.push(["bad", "Lot manquant"]);
+    const d = normDate(l.date);
+    if (!l.date.trim()) out.push(["bad", "Date manquante"]);
+    else if (!d.ok) out.push(["bad", "Date au mauvais format (JJ/MM/AAAA ou MM/AAAA)"]);
+    else {
+      const days = Math.round((d.date - today0()) / 864e5);
+      if (days < 0) out.push(["bad", "Date dépassée : ne pas expédier"]);
+      else if (l.typeDate === "DLC" && days <= 7) out.push(["warn", `DLC dans ${days} j`]);
+      if (days > 4 * 365) out.push(["warn", "Date très lointaine : vérifie"]);
+    }
+    if (l.doute) out.push(["bad", "Lecture douteuse : vérifie le lot et la date puis corrige (ou touche le champ)"]);
+    return out;
+  }
+
+  function mergeLines() {
+    const map = new Map(), out = [];
+    for (const l of st.lines) {
+      const k = normName(l.produit) + "|" + cleanLot(l.lot);
+      if (l.produit && l.lot && map.has(k)) { const t = map.get(k); t.qte += l.qte; t.photoIds = [...new Set([...t.photoIds, ...l.photoIds])]; t.doute = t.doute || l.doute; }
+      else { map.set(k, l); out.push(l); }
+    }
+    st.lines = out;
+  }
+
+  function buildBlock(lines, forced) {
+    const n = new Date();
+    const rows = lines.map((l) => `- ${l.produit.trim()} x${l.qte} : lot ${l.lot.trim()}, ${l.typeDate || "Date"} ${normDate(l.date).v}`);
+    return [B_START, `Préparé le ${pad(n.getDate())}/${pad(n.getMonth() + 1)}/${n.getFullYear()} ${pad(n.getHours())}:${pad(n.getMinutes())}${forced ? " (validation forcée)" : ""}`, ...rows, B_END].join("\n");
+  }
+  function mergeNote(note, block) {
+    const re = new RegExp("\\n*" + B_START.replace(/[-]/g, "\\-") + "[\\s\\S]*?" + B_END.replace(/[-]/g, "\\-") + "\\n*", "g");
+    const base = String(note || "").replace(re, "\n").trim();
+    return (base ? base + "\n\n" : "") + block;
+  }
+  function parseBlock(note) {
+    const s = String(note || ""), i = s.indexOf(B_START), j = s.indexOf(B_END);
+    if (i < 0 || j < i) return null;
+    const lines = s.slice(i + B_START.length, j).split("\n").map((x) => x.trim()).filter(Boolean);
+    const head = lines.find((x) => x.startsWith("Préparé le")) || "";
+    const items = lines.filter((x) => x.startsWith("- ")).map((x) => {
+      const m = x.match(/^- (.+) x(\d+) : lot (.*?), (DLC|DDM|Date) (.*)$/);
+      return m ? { produit: m[1], qte: +m[2], lot: m[3], typeDate: m[4], date: m[5] } : { produit: x.slice(2), qte: 1, lot: "", typeDate: "", date: "" };
+    });
+    return { prepare: head.replace("Préparé le ", ""), items };
+  }
+
+  // ---------- Shopify via le connecteur ----------
+  function mcpMsg(e) {
+    switch (e && e.code) {
+      case "needs_reauth": return "La connexion Shopify a expiré. Reconnecte Shopify dans claude.ai → Paramètres → Connecteurs.";
+      case "server_not_connected": return "Le connecteur Shopify n'est pas ajouté à ton compte. Ajoute-le dans claude.ai → Paramètres → Connecteurs.";
+      case "selection_required": return "Plusieurs connecteurs Shopify existent : choisis-en un dans la fenêtre de claude.ai.";
+      case "not_in_manifest": return "Tu as refusé l'accès Shopify pour cette page. Recharge la page pour l'autoriser.";
+      case "blocked_by_policy": case "approval_required": return "Ton organisation bloque cet accès Shopify.";
+      case "server_unavailable": return "Shopify ne répond pas pour le moment. Réessaie dans quelques secondes.";
+      case "tool_error": return "Shopify a refusé l'opération : " + (e.message || "");
+      default: return "Erreur Shopify : " + ((e && e.message) || "inconnue");
+    }
+  }
+  async function gql(tool, query, variables) {
+    if (!mcp) throw { code: "not_granted", message: "Connecteurs indisponibles dans cette vue." };
+    const r = await mcp.callTool(SHOP, tool, { query, variables }, { cache: false });
+    let p = r.payload;
+    if (typeof p === "string") { try { p = JSON.parse(p); } catch { throw { code: "tool_error", message: p.slice(0, 300) }; } }
+    if (p && p.errors && p.errors.length) throw { code: "tool_error", message: p.errors.map((x) => x.message).join(" ; ") };
+    return (p && p.data) || p;
+  }
+
+  const Q_ORDERS = `query Orders($q: String!) { orders(first: 50, query: $q, sortKey: CREATED_AT) { nodes { id name createdAt cancelledAt closed displayFulfillmentStatus sourceName tags shippingAddress { firstName lastName } lineItems(first: 50) { nodes { title quantity sku variantTitle product { descriptionHtml } } } } } }`;
+  const Q_ONE = `query One($id: ID!) { order(id: $id) { id note tags cancelledAt closed displayFulfillmentStatus } }`;
+  const M_NOTE = `mutation Note($input: OrderInput!) { orderUpdate(input: $input) { order { id note } userErrors { field message } } }`;
+  const M_TAG = `mutation Tag($id: ID!, $tags: [String!]!) { tagsAdd(id: $id, tags: $tags) { node { id } userErrors { field message } } }`;
+  const Q_TRACED = `query Traced($q: String!) { orders(first: 100, query: $q, sortKey: CREATED_AT, reverse: true) { nodes { id name createdAt sourceName tags note shippingAddress { firstName lastName } } } }`;
+
+  async function loadOrders() {
+    $("orders").innerHTML = '<span class="muted">Chargement des commandes Shopify…</span>';
+    try {
+      const d = await gql("graphql_query", Q_ORDERS, { q: "fulfillment_status:unfulfilled status:open" });
+      const nodes = (d && d.orders && d.orders.nodes) || [];
+      st.orders = nodes.filter((o) => !o.cancelledAt && !o.closed && !(o.tags || []).some((t) => t === TAG_OK || t === TAG_FORCE));
+      renderOrders();
+      if (!st.cur && st.orders.length) selectOrder(st.orders[0].id);
+      else if (st.cur) { const still = st.orders.find((o) => o.id === st.cur.id); if (!still) showCurAlert("Cette commande n'est plus à préparer dans Shopify (annulée, expédiée ou déjà tracée)."); }
+    } catch (e) { $("orders").innerHTML = `<div class="banner bad">${esc(mcpMsg(e))}</div>`; }
+  }
+
+  function renderOrders() {
+    if (!st.orders.length) { $("orders").innerHTML = '<div class="banner ok">Aucune commande à préparer. Tout est tracé.</div>'; return; }
+    $("orders").innerHTML = st.orders.map((o) => {
+      const c = canal(o), n = o.lineItems.nodes.reduce((a, l) => a + l.quantity, 0);
+      return `<button class="order" data-id="${esc(o.id)}" aria-pressed="${st.cur && st.cur.id === o.id}">
+        <span class="row" style="gap:8px"><span class="num">${esc(o.name)}</span><span class="chip ${c.toLowerCase()}">${c}</span></span>
+        <span>${esc(client(o))}</span><span class="muted" style="font-size:.9rem">${n} article${n > 1 ? "s" : ""} · ${new Date(o.createdAt).toLocaleDateString("fr-FR")}</span></button>`;
+    }).join("");
+  }
+
+  // ---------- brouillon local ----------
+  const dkey = (id) => "traca-draft-" + id;
+  function saveDraft() { if (!st.cur) return; try { localStorage.setItem(dkey(st.cur.id), JSON.stringify(st.lines.map(({ photoIds, ...l }) => l))); } catch {} }
+  function loadDraft(id) { try { const v = JSON.parse(localStorage.getItem(dkey(id)) || "null"); return Array.isArray(v) ? v : null; } catch { return null; } }
+  function dropDraft(id) { try { localStorage.removeItem(dkey(id)); } catch {} }
+
+  function selectOrder(id) {
+    const o = st.orders.find((x) => x.id === id); if (!o) return;
+    if (st.cur && st.cur.id !== id) saveDraft();
+    st.cur = o; st.photos.forEach((p) => URL.revokeObjectURL(p.url)); st.photos = []; st.check = null;
+    const d = loadDraft(id);
+    st.lines = d ? d.map((l) => ({ ...l, id: ++lid, photoIds: [] })) : [];
+    $("saveres").hidden = true; $("force").checked = false; $("cur-alert").hidden = true;
+    renderOrders(); renderCurrent(); renderThumbs(); renderLines(); scheduleCheck();
+    ["current", "photos", "lines", "save"].forEach((x) => ($(x).hidden = false));
+  }
+  function showCurAlert(t) { $("cur-alert").textContent = t; $("cur-alert").hidden = false; updateSave(); }
+
+  function renderCurrent() {
+    const o = st.cur;
+    $("cur-title").textContent = `Commande ${o.name}`;
+    $("cur-meta").textContent = `${canal(o)} · ${client(o)}`;
+    const marks = (st.check && st.check.perLine) || [];
+    $("expect").innerHTML = o.lineItems.nodes.map((l, i) => {
+      const box = BOX_RE.test(l.title) || /[–:]| avec /.test(l.title) && l.title.split(/,|\+| et /).length > 2;
+      const desc = box ? stripHtml(l.product && l.product.descriptionHtml).slice(0, 260) : "";
+      const m = marks[i]; const cls = m ? (m.ok ? "ok" : "miss") : "";
+      const sub = m ? `<div class="box">${esc(m.text)}</div>` : "";
+      return `<li class="${cls}"><span class="mark">${m ? (m.ok ? "✓" : "✗") : l.quantity}</span><div><div><strong>${l.quantity} ×</strong> ${esc(l.title)}${l.variantTitle ? " – " + esc(l.variantTitle) : ""}</div>${desc ? `<div class="box">Fiche produit : ${esc(desc)}${desc.length >= 260 ? "…" : ""}</div>` : ""}${sub}</div></li>`;
+    }).join("");
+  }
+
+  // ---------- photos & lecture ----------
+  const READ_PROMPT = `Tu lis la ou les étiquettes de charcuterie (saucisson, fuet, chorizo, lomo, jambon, coffret) sur cette photo, pour la traçabilité d'un colis.
+Pour CHAQUE produit dont l'étiquette est visible, relève :
+- "produit" : nom court tel qu'écrit, avec le poids s'il figure (ex. "Chorizo doux 280 g")
+- "lot" : le numéro de lot exact, celui qui suit "Lot", "L", "Lote", "LOT n°", "Batch" ou l'identifiant GS1 (10). Recopie-le caractère par caractère, sans espace ni mot "Lot". N'invente rien.
+  Ce n'est PAS le code-barres (EAN à 13 chiffres), ni le SSCC (00), ni l'estampille sanitaire ovale (ex. "FR 63.xxx.xxx CE", "ES 10.xxxxx/B CE"), ni le poids, ni le prix.
+- "date" : la date limite au format JJ/MM/AAAA. Si seuls le mois et l'année sont indiqués, MM/AAAA. Année sur 2 chiffres → 20xx. En GS1 : (17)AAMMJJ = DLC, (15)AAMMJJ = DDM ; ignore (11) et (13).
+- "typeDate" : "DLC" (à consommer jusqu'au / fecha de caducidad) ou "DDM" (à consommer de préférence avant / consumir preferentemente antes de / best before)
+- "doute" : true si un seul caractère du lot ou de la date est flou, coupé, masqué ou incertain, sinon false
+Si une information est absente ou illisible, chaîne vide et doute true.
+Réponds uniquement par un tableau JSON, ex. : [{"produit":"Fuet Catalan 160 g","lot":"L24158","date":"12/03/2027","typeDate":"DDM","doute":false}]`;
+
+  async function shrink(file) {
+    try {
+      const bmp = await createImageBitmap(file, { imageOrientation: "from-image" });
+      const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height); bmp.close && bmp.close();
+      return await new Promise((res) => c.toBlob((b) => res(b || file), "image/jpeg", 0.9));
+    } catch { return file; }
+  }
+
+  function addFiles(files) {
+    if (!st.cur) return;
+    for (const f of files) {
+      const p = { id: ++pid, file: f, blob: null, url: URL.createObjectURL(f), status: "attente", err: "", tries: 0 };
+      st.photos.push(p);
+    }
+    try { navigator.vibrate && navigator.vibrate(40); } catch {}
+    renderThumbs(); pump();
+  }
+
+  let running = 0;
+  function pump() {
+    while (running < 2) {
+      const p = st.photos.find((x) => x.status === "attente"); if (!p) break;
+      running++; p.status = "lecture"; renderThumbs();
+      readPhoto(p).finally(() => { running--; renderThumbs(); pump(); });
+    }
+  }
+
+  function sanitizeItems(arr) {
+    if (!Array.isArray(arr)) throw { code: "invalid_json" };
+    return arr.filter((x) => x && typeof x === "object").map((x) => {
+      const d = normDate(x.date);
+      const lot = cleanLot(x.lot);
+      const typeDate = /dlc/i.test(x.typeDate) ? "DLC" : /ddm/i.test(x.typeDate) ? "DDM" : "DDM";
+      return { produit: String(x.produit || "").trim().slice(0, 120), lot, date: d.v, typeDate, doute: !!x.doute || !lot || !d.ok };
+    });
+  }
+
+  async function readPhoto(p) {
+    const orderId = st.cur && st.cur.id;
+    try {
+      if (!sample || !canImages) throw { code: "images_unavailable" };
+      p.blob = p.blob || await shrink(p.file);
+      let items = sanitizeItems(await sample.json(READ_PROMPT, { images: [p.blob], modelTier: "default" }));
+      if (!items.length || items.some((i) => i.doute)) {
+        p.status = "relecture"; renderThumbs();
+        try { const again = sanitizeItems(await sample.json(READ_PROMPT, { images: [p.blob], modelTier: "complex" })); if (again.length && again.filter((i) => i.doute).length <= items.filter((i) => i.doute).length) items = again; } catch {}
+      }
+      if (!st.cur || st.cur.id !== orderId || !st.photos.includes(p)) return;
+      if (!items.length) { p.status = "vide"; return; }
+      for (const it of items) st.lines.push({ id: ++lid, ...it, qte: 1, photoIds: [p.id] });
+      p.status = items.some((i) => i.doute) ? "verifier" : "ok";
+      mergeLines(); renderLines(); saveDraft(); scheduleCheck();
+    } catch (e) {
+      const code = e && e.code;
+      if (code === "not_granted" || code === "sampling_disabled" || code === "images_unavailable") { p.status = "erreur"; p.err = "Lecture IA non autorisée"; $("noimg").hidden = false; return; }
+      if ((code === "upstream_error" || code === "invalid_json") && p.tries < 1) { p.tries++; await new Promise((r) => setTimeout(r, 5000)); return readPhoto(p); }
+      p.status = "erreur"; p.err = code === "rate_limited" ? "Trop de lectures, attends un peu" : code === "image_rejected" ? "Photo refusée" : "Lecture échouée";
+    }
+  }
+
+  function renderThumbs() {
+    const lab = { attente: ["busy", "En attente"], lecture: ["busy", "Lecture…"], relecture: ["busy", "Relecture précise…"], ok: ["ok", "✓ Lu"], verifier: ["warn", "À vérifier"], vide: ["warn", "Aucune étiquette vue"], erreur: ["bad", ""] };
+    $("thumbs").innerHTML = st.photos.map((p) => {
+      const [c, t] = lab[p.status] || ["busy", ""];
+      return `<div class="thumb"><img src="${p.url}" alt="Photo ${p.id}"><button class="x" data-del="${p.id}" aria-label="Retirer la photo">✕</button><div class="st ${c}">${esc(t || p.err)}</div>${p.status === "erreur" || p.status === "vide" ? `<button class="retry" data-retry="${p.id}">Réessayer</button>` : ""}</div>`;
+    }).join("");
+  }
+
+  // ---------- lignes ----------
+  function renderLines() {
+    $("nolines").hidden = st.lines.length > 0;
+    const names = [...new Set(st.lines.map((l) => l.produit).filter(Boolean))];
+    $("tbody").innerHTML = st.lines.map((l) => {
+      const iss = lineIssues(l), bad = iss.some((x) => x[0] === "bad");
+      const fBad = (k) => (k === "lot" && (!l.lot || l.doute)) || (k === "date" && (iss.some((x) => /Date/.test(x[1]) && x[0] === "bad") || l.doute)) || (k === "produit" && !l.produit) ? "bad" : "";
+      return `<tr data-l="${l.id}" class="${bad ? "has-bad" : iss.length ? "has-warn" : ""}">
+        <td><input id="p-${l.id}" data-k="produit" value="${esc(l.produit)}" list="names" class="${fBad("produit")}" aria-label="Produit">
+          ${iss.map((x) => `<div class="msg ${x[0]}">${esc(x[1])}</div>`).join("")}</td>
+        <td><input id="l-${l.id}" data-k="lot" class="lot ${fBad("lot")}" value="${esc(l.lot)}" aria-label="Lot"></td>
+        <td><input id="d-${l.id}" data-k="date" class="${fBad("date")}" value="${esc(l.date)}" placeholder="JJ/MM/AAAA" inputmode="numeric" aria-label="Date limite"></td>
+        <td><select id="t-${l.id}" data-k="typeDate" aria-label="Type de date"><option ${l.typeDate === "DDM" ? "selected" : ""}>DDM</option><option ${l.typeDate === "DLC" ? "selected" : ""}>DLC</option></select></td>
+        <td class="qte"><input id="q-${l.id}" data-k="qte" type="number" min="1" value="${l.qte}" aria-label="Quantité"></td>
+        <td><button class="del" data-dl="${l.id}" aria-label="Supprimer la ligne">✕</button></td></tr>`;
+    }).join("") + `<datalist id="names">${names.map((n) => `<option value="${esc(n)}">`).join("")}</datalist>`;
+    updateSave();
+  }
+
+  // ---------- contrôle de commande ----------
+  let checkTimer = null, checkSeq = 0;
+  function scheduleCheck() { clearTimeout(checkTimer); checkTimer = setTimeout(runCheck, 700); }
+  async function runCheck() {
+    const o = st.cur; if (!o) return;
+    const labels = st.lines.filter((l) => l.produit.trim());
+    if (!labels.length) { st.check = null; renderCurrent(); renderCheck(); return; }
+    if (!sample) { st.check = { error: "Contrôle automatique indisponible : vérifie le colis à l'œil." }; renderCheck(); return; }
+    const seq = ++checkSeq; st.checking = true; renderCheck();
+    const lignes = o.lineItems.nodes.map((l, i) => ({ ligne: i, titre: l.title + (l.variantTitle ? " – " + l.variantTitle : ""), sku: l.sku || "", qte: l.quantity, ficheProduit: BOX_RE.test(l.title) ? stripHtml(l.product && l.product.descriptionHtml).slice(0, 700) : "" }));
+    const etiq = labels.map((l, i) => ({ etiquette: i, produit: l.produit, lot: l.lot, qte: l.qte }));
+    const prompt = `Tu contrôles la préparation d'un colis de charcuterie SaucBack avant expédition.
+Lignes de la commande Shopify : ${JSON.stringify(lignes)}
+Étiquettes flashées dans le colis : ${JSON.stringify(etiq)}
+Règles :
+- Une ligne simple attend "qte" unités de ce produit.
+- Une box / coffret / assortiment contient plusieurs produits : utilise la liste écrite dans le titre après "–", ":" ou "avec" (séparée par virgules, "+" ou "et"), sinon le contenu décrit dans "ficheProduit". Multiplie par "qte" de la ligne.
+- Si le contenu d'une box n'est ni dans le titre ni dans la fiche produit, mets la ligne dans "inconnues".
+- Associe chaque produit attendu aux étiquettes par le sens du nom (ex. "1/4 Serrano ETG" = jambon serrano, "Chorizo IGP" = chorizo). Ignore les écarts de poids et de marque. Une étiquette ne sert qu'une fois (sa "qte" compte pour plusieurs unités). Ne force jamais une correspondance douteuse.
+- "enTrop" : indices des étiquettes qui ne correspondent à rien dans la commande.
+Réponds uniquement en JSON :
+{"attendus":[{"ligne":0,"produit":"Chorizo IGP","qte":1,"etiquettes":[2]}],"inconnues":[1],"enTrop":[]}`;
+    try {
+      const r = await sample.json(prompt, { modelTier: "quick" });
+      if (seq !== checkSeq || st.cur !== o) return;
+      st.check = evalCheck(r, o, labels);
+    } catch (e) {
+      if (seq !== checkSeq) return;
+      st.check = { error: e && e.code === "not_granted" ? "Contrôle automatique non autorisé : vérifie le colis à l'œil." : "Le contrôle automatique a échoué. Modifie une ligne pour relancer, ou vérifie à l'œil." };
+    } finally { if (seq === checkSeq) { st.checking = false; renderCurrent(); renderCheck(); } }
+  }
+
+  // Le total de l'IA n'est jamais repris : on recalcule depuis les indices.
+  function evalCheck(r, o, labels) {
+    const att = Array.isArray(r && r.attendus) ? r.attendus : [];
+    const used = new Set(), perLine = o.lineItems.nodes.map(() => ({ need: 0, got: 0, missing: [] }));
+    const missing = [];
+    for (const a of att) {
+      const li = Number(a.ligne); if (!perLine[li]) continue;
+      const need = Math.max(1, Number(a.qte) || 1);
+      let got = 0;
+      for (const ix of (Array.isArray(a.etiquettes) ? a.etiquettes : [])) { const n = Number(ix); if (labels[n] && !used.has(n)) { used.add(n); got += labels[n].qte; } }
+      perLine[li].need += need; perLine[li].got += Math.min(got, need);
+      if (got < need) { perLine[li].missing.push(`${need - got} × ${a.produit}`); missing.push(`${need - got} × ${a.produit}`); }
+    }
+    const unknown = (Array.isArray(r && r.inconnues) ? r.inconnues : []).map((x) => Number(typeof x === "object" ? x.ligne : x)).filter((x) => perLine[x]);
+    const extra = labels.map((l, i) => i).filter((i) => !used.has(i)).map((i) => labels[i].produit);
+    const marks = perLine.map((p, i) => {
+      if (unknown.includes(i)) return { ok: false, text: "Contenu inconnu : la fiche produit ne liste pas le contenu de la box." };
+      if (!p.need) return { ok: false, text: "Non reconnu par le contrôle." };
+      return p.missing.length ? { ok: false, text: "Manque : " + p.missing.join(", ") } : { ok: true, text: "Complet" };
+    });
+    unknown.forEach((i) => missing.push(`contenu de « ${o.lineItems.nodes[i].title} » inconnu`));
+    perLine.forEach((p, i) => { if (!p.need && !unknown.includes(i)) missing.push(`« ${o.lineItems.nodes[i].title} » non reconnu`); });
+    return { complete: !missing.length && !extra.length, missing, extra, perLine: marks };
+  }
+
+  function renderCheck() {
+    const el = $("check"), c = st.check;
+    if (st.checking) { el.className = "banner info"; el.textContent = "Contrôle de la commande en cours…"; }
+    else if (!c) { el.className = "banner info"; el.textContent = "Le contrôle de la commande démarre dès la première étiquette lue."; }
+    else if (c.error) { el.className = "banner warn"; el.textContent = c.error; }
+    else if (c.complete) { el.className = "banner ok"; el.textContent = "✓ Tous les produits de la commande sont dans le colis."; }
+    else {
+      el.className = "banner bad";
+      const parts = []; if (c.missing.length) parts.push("Il manque : " + c.missing.join(" ; ")); if (c.extra.length) parts.push("En trop : " + c.extra.join(", "));
+      el.textContent = parts.join(" — ");
+    }
+    updateSave();
+  }
+
+  function blockers() {
+    const b = [];
+    if (!st.cur) return ["Aucune commande sélectionnée"];
+    if (!$("cur-alert").hidden) b.push("Commande plus à préparer dans Shopify");
+    if (!st.lines.length) b.push("Aucune étiquette lue");
+    if (st.photos.some((p) => ["attente", "lecture", "relecture"].includes(p.status))) b.push("Lecture des photos en cours");
+    const bad = st.lines.filter((l) => lineIssues(l).some((x) => x[0] === "bad"));
+    if (bad.length) b.push(`${bad.length} ligne${bad.length > 1 ? "s" : ""} à corriger`);
+    return b;
+  }
+  function updateSave() {
+    const b = blockers(), c = st.check;
+    const hardOnly = b.filter((x) => !/à corriger/.test(x));
+    const needForce = !!b.length || st.checking || !c || !!c.error || !c.complete;
+    st.needForce = needForce;
+    $("force-wrap").hidden = !needForce || !!hardOnly.length || st.saving;
+    const ok = !st.saving && !hardOnly.length && !st.checking && (!needForce || $("force").checked);
+    $("savebtn").disabled = !ok;
+    $("savebtn").textContent = st.saving ? "Enregistrement…" : hardOnly.length ? hardOnly[0] : needForce ? (b.length ? b[0] + " — coche pour forcer" : "Enregistrer quand même dans Shopify") : "Enregistrer dans Shopify";
+  }
+
+  // ---------- enregistrement Shopify ----------
+  async function save() {
+    const o = st.cur; if (!o) return;
+    const forced = st.needForce;
+    st.saving = true; updateSave();
+    const res = $("saveres"); res.hidden = false; res.className = "banner info"; res.textContent = "Écriture dans Shopify…";
+    try {
+      const cur = (await gql("graphql_query", Q_ONE, { id: o.id })).order;
+      if (!cur) throw { code: "tool_error", message: "commande introuvable" };
+      if (cur.cancelledAt) throw { code: "tool_error", message: "la commande a été annulée entre-temps" };
+      const block = buildBlock(st.lines, forced);
+      const u = (await gql("graphql_mutation", M_NOTE, { input: { id: o.id, note: mergeNote(cur.note, block) } })).orderUpdate;
+      if (u && u.userErrors && u.userErrors.length) throw { code: "tool_error", message: u.userErrors.map((x) => x.message).join(" ; ") };
+      const t = (await gql("graphql_mutation", M_TAG, { id: o.id, tags: [forced ? TAG_FORCE : TAG_OK] })).tagsAdd;
+      const tagErr = t && t.userErrors && t.userErrors.length ? t.userErrors.map((x) => x.message).join(" ; ") : "";
+      dropDraft(o.id);
+      try { navigator.vibrate && navigator.vibrate([60, 60, 120]); } catch {}
+      res.className = tagErr ? "banner warn" : "banner ok";
+      res.textContent = `✓ ${o.name} enregistrée dans Shopify (note${tagErr ? "" : " + tag « " + (forced ? TAG_FORCE : TAG_OK) + " »"}).` + (tagErr ? " Le tag n'a pas pu être ajouté : " + tagErr : "");
+      st.registry = null;
+      const idx = st.orders.findIndex((x) => x.id === o.id);
+      st.orders.splice(idx, 1);
+      st.cur = null; st.saving = false;
+      renderOrders();
+      const next = st.orders[idx] || st.orders[0];
+      if (next) { const keep = res.textContent; const cls = res.className; selectOrder(next.id); res.hidden = false; res.className = cls; res.textContent = keep + " Commande suivante : " + next.name + "."; }
+      else { ["current", "photos", "lines"].forEach((x) => ($(x).hidden = true)); updateSave(); }
+    } catch (e) {
+      st.saving = false;
+      res.className = "banner bad";
+      res.textContent = mcpMsg(e) + " Rien n'est perdu : vérifie la commande dans Shopify puis réessaie.";
+      updateSave();
+    }
+  }
+
+  // ---------- registre ----------
+  async function loadRegistry(force) {
+    if (st.registry && !force) return st.registry;
+    $("reg").innerHTML = '<li class="muted">Chargement du registre depuis Shopify…</li>';
+    const d = await gql("graphql_query", Q_TRACED, { q: `tag:'${TAG_OK}' OR tag:'${TAG_FORCE}'` });
+    st.registry = ((d && d.orders && d.orders.nodes) || []).map((o) => ({ o, b: parseBlock(o.note) })).filter((x) => x.b);
+    return st.registry;
+  }
+  function regItem(x, hl) {
+    const items = x.b.items.map((i) => {
+      let lot = esc(i.lot);
+      if (hl && searchLot(i.lot).includes(hl)) lot = `<mark>${lot}</mark>`;
+      return `${esc(i.produit)} ×${i.qte} · lot ${lot} · ${esc(i.typeDate)} ${esc(i.date)}`;
+    }).join("\n");
+    const forced = (x.o.tags || []).includes(TAG_FORCE);
+    return `<li><div class="row" style="justify-content:space-between"><strong>${esc(x.o.name)} · ${esc(client(x.o))}</strong><span class="row" style="gap:6px"><span class="chip ${canal(x.o).toLowerCase()}">${canal(x.o)}</span>${forced ? '<span class="chip temu">forcée</span>' : ""}</span></div><span class="muted" style="font-size:.9rem">Préparé le ${esc(x.b.prepare)}</span><div class="items">${items}</div></li>`;
+  }
+  async function showRegistry() {
+    try { const r = await loadRegistry(); $("reg").innerHTML = r.length ? r.slice(0, 40).map((x) => regItem(x)).join("") : '<li class="muted">Aucun colis tracé pour l\'instant.</li>'; }
+    catch (e) { $("reg").innerHTML = `<li class="banner bad">${esc(mcpMsg(e))}</li>`; }
+  }
+  async function search(q) {
+    const out = $("sres"); q = q.trim(); if (!q) return;
+    out.className = "muted"; out.textContent = "Recherche…";
+    try {
+      const r = await loadRegistry();
+      const hl = searchLot(q), num = q.replace(/^#/, "");
+      const hits = r.filter((x) => x.o.name.replace(/^#/, "") === num || (hl && x.b.items.some((i) => searchLot(i.lot).includes(hl))));
+      out.className = "";
+      out.innerHTML = hits.length
+        ? `<div class="banner ${hits.length ? "warn" : "ok"}" style="margin-bottom:10px">${hits.length} colis concerné${hits.length > 1 ? "s" : ""} par « ${esc(q)} »</div><ul class="reg">${hits.map((x) => regItem(x, hl)).join("")}</ul>`
+        : `<div class="banner ok">Aucun colis tracé avec « ${esc(q)} » parmi les 100 dernières commandes tracées.</div>`;
+    } catch (e) { out.className = "banner bad"; out.textContent = mcpMsg(e); }
+  }
+  async function exportCsv() {
+    const out = $("sres");
+    try {
+      const r = await loadRegistry(true);
+      const cell = (v) => { const s = String(v ?? ""); return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+      const rows = [["Date expédition", "Commande", "Canal", "Produit", "Quantité", "Lot", "Date limite", "Type date", "Contrôle"]];
+      for (const x of r) for (const i of x.b.items) rows.push([x.b.prepare.replace(" (validation forcée)", ""), x.o.name.replace(/^#/, ""), canal(x.o), i.produit, i.qte, i.lot, i.date, i.typeDate, (x.o.tags || []).includes(TAG_FORCE) ? "forcé" : "complet"]);
+      const csv = "﻿" + rows.map((r) => r.map(cell).join(";")).join("\r\n");
+      const d = new Date(), name = `registre-expedition-saucback-${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}.csv`;
+      if (!downloads) { out.className = "banner warn"; out.textContent = "Le téléchargement n'est pas disponible dans cette vue."; return; }
+      await downloads.save({ filename: name, data: csv });
+    } catch (e) { if (e && e.code === "cancelled") return; out.className = "banner bad"; out.textContent = e && e.code && !/^(unavailable|bad_request)$/.test(e.code) ? mcpMsg(e) : "Export impossible dans cette vue."; }
+  }
+
+  // ---------- événements ----------
+  function setTab(reg) {
+    $("tab-prep").setAttribute("aria-selected", String(!reg)); $("tab-reg").setAttribute("aria-selected", String(reg));
+    $("view-prep").hidden = reg; $("view-reg").hidden = !reg;
+    if (reg) showRegistry();
+  }
+  $("tab-prep").onclick = () => setTab(false);
+  $("tab-reg").onclick = () => setTab(true);
+  $("refresh").onclick = loadOrders;
+  $("orders").addEventListener("click", (e) => { const b = e.target.closest(".order"); if (b) selectOrder(b.dataset.id); });
+  $("cam").addEventListener("change", (e) => { addFiles([...e.target.files]); e.target.value = ""; });
+  $("gal").addEventListener("change", (e) => { addFiles([...e.target.files]); e.target.value = ""; });
+  $("thumbs").addEventListener("click", (e) => {
+    const d = e.target.closest("[data-del]"), r = e.target.closest("[data-retry]");
+    if (d) {
+      const id = +d.dataset.del, p = st.photos.find((x) => x.id === id); if (!p) return;
+      URL.revokeObjectURL(p.url); st.photos = st.photos.filter((x) => x !== p);
+      st.lines = st.lines.filter((l) => !(l.photoIds.length === 1 && l.photoIds[0] === id)).map((l) => ({ ...l, photoIds: l.photoIds.filter((x) => x !== id) }));
+      renderThumbs(); renderLines(); saveDraft(); scheduleCheck();
+    }
+    if (r) { const p = st.photos.find((x) => x.id === +r.dataset.retry); if (p) { p.status = "attente"; p.tries = 0; p.err = ""; renderThumbs(); pump(); } }
+  });
+  $("tbody").addEventListener("input", (e) => {
+    const tr = e.target.closest("tr"); if (!tr) return;
+    const l = st.lines.find((x) => x.id === +tr.dataset.l); const k = e.target.dataset.k; if (!l || !k) return;
+    l[k] = k === "qte" ? Math.max(1, parseInt(e.target.value, 10) || 1) : e.target.value;
+    if (k === "lot" || k === "date") l.doute = false;
+    saveDraft(); scheduleCheck(); updateSave();
+  });
+  $("tbody").addEventListener("change", (e) => {
+    const tr = e.target.closest("tr"); if (!tr) return;
+    const l = st.lines.find((x) => x.id === +tr.dataset.l); if (!l) return;
+    if (e.target.dataset.k === "date") { const d = normDate(l.date); if (d.ok) l.date = d.v; }
+    if (e.target.dataset.k === "lot") l.lot = cleanLot(l.lot);
+    const focusId = document.activeElement && document.activeElement.id;
+    mergeLines(); renderLines(); saveDraft();
+    if (focusId && $(focusId)) $(focusId).focus();
+  });
+  $("tbody").addEventListener("focusin", (e) => {
+    const tr = e.target.closest("tr"); if (!tr) return;
+    const l = st.lines.find((x) => x.id === +tr.dataset.l);
+    if (l && l.doute && (e.target.dataset.k === "lot" || e.target.dataset.k === "date")) { l.doute = false; updateSave(); }
+  });
+  $("tbody").addEventListener("click", (e) => { const b = e.target.closest("[data-dl]"); if (!b) return; st.lines = st.lines.filter((l) => l.id !== +b.dataset.dl); renderLines(); saveDraft(); scheduleCheck(); });
+  $("addline").onclick = () => { st.lines.push({ id: ++lid, produit: "", lot: "", date: "", typeDate: "DDM", qte: 1, doute: false, photoIds: [] }); renderLines(); const last = st.lines[st.lines.length - 1]; $("p-" + last.id).focus(); };
+  $("force").onchange = updateSave;
+  $("savebtn").onclick = save;
+  $("sform").addEventListener("submit", (e) => { e.preventDefault(); search($("q").value); });
+  $("csv").onclick = exportCsv;
+
+  // Écran allumé pendant la préparation
+  let lock = null;
+  async function wake() { try { if ("wakeLock" in navigator && document.visibilityState === "visible") lock = await navigator.wakeLock.request("screen"); } catch {} }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { wake(); if (st.cur && !st.saving) loadOrders(); } });
+  wake();
+
+  // ---------- démarrage ----------
+  (async () => {
+    const C = window.claude;
+    if (!C || !C.use) { $("orders").innerHTML = '<div class="banner bad">Ouvre cette page depuis claude.ai pour qu\'elle puisse parler à Shopify et à Claude.</div>'; return; }
+    const [m, s, d] = await Promise.all([C.use("mcp"), C.use("sample"), C.use("downloads")]);
+    mcp = m; sample = s; downloads = d;
+    if (sample) { try { canImages = !!(await sample.limits()).images; } catch { canImages = false; } }
+    $("noimg").hidden = !!(sample && canImages);
+    if (!mcp) { $("orders").innerHTML = '<div class="banner bad">Les connecteurs ne sont pas disponibles dans cette vue. Ouvre la page depuis claude.ai, connecté à ton compte.</div>'; return; }
+    loadOrders();
+    setInterval(() => { if (document.visibilityState === "visible" && !st.saving && !st.photos.some((p) => p.status === "lecture")) loadOrders(); }, 120000);
+  })();
+})();
+</script>
