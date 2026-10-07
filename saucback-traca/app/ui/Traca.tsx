@@ -287,7 +287,11 @@ export default function Traca() {
   return (
     <div className="wrap">
       <header className="top">
-        <h1>Traçabilité colis</h1>
+        <div className="brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="SaucBack" className="logo" />
+          <h1>Traçabilité colis</h1>
+        </div>
         <div className="row">
           <div className="tabs" role="tablist">
             <button role="tab" aria-selected={tab === "prep"} onClick={() => setTab("prep")}>Préparer</button>

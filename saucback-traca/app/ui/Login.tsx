@@ -21,6 +21,8 @@ export default function Login() {
   return (
     <main className="login">
       <form onSubmit={submit}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="SaucBack" className="logo big" />
         <h1>Traçabilité colis</h1>
         <p className="muted">Entre le code PIN de la tablette. Il n&apos;est demandé qu&apos;une fois.</p>
         <input id="pin" inputMode="numeric" autoComplete="one-time-code" pattern="\d*" maxLength={8} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} autoFocus aria-label="Code PIN" />
